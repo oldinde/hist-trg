@@ -304,14 +304,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config/supabase.js"></script>
+  <script src="config/admin-auth.js"></script>
 
   <script>
-    const isLoggedIn = localStorage.getItem("adminLoggedIn");
-
-    if (isLoggedIn !== "true") {
-      window.location.href = "admin-login.html";
-    }
-
     const logoutBtn = document.getElementById("logoutBtn");
     const searchBtn = document.getElementById("searchBtn");
     const nrpSearchInput = document.getElementById("nrpSearchInput");
@@ -368,9 +363,8 @@
       nrpSearchInput.value = value;
     });
 
-    logoutBtn.addEventListener("click", function () {
-      localStorage.removeItem("adminLoggedIn");
-      window.location.href = "admin-login.html";
+    logoutBtn.addEventListener("click", async function () {
+      await logoutAdmin();
     });
 
     function getTrainingName(item) {
@@ -940,10 +934,17 @@
       event.target.setAttribute("data-prev-value", event.target.value || "");
     });
 
-    populateMonthOptions();
-    populateYearOptions();
-    populateProgressFilterOptions();
-    refreshDashboardData();
+    async function initDashboard() {
+      const session = await requireAdminSession();
+      if (!session) return;
+
+      populateMonthOptions();
+      populateYearOptions();
+      populateProgressFilterOptions();
+      refreshDashboardData();
+    }
+
+    initDashboard();
   </script>
 </body>
 </html>
