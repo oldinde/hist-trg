@@ -379,9 +379,7 @@
           .eq("id", submissionId)
           .limit(1);
 
-        if (submissionError) {
-          throw submissionError;
-        }
+        if (submissionError) throw submissionError;
 
         if (!submissionData || submissionData.length === 0) {
           detailMessage.textContent = "Data submission tidak ditemukan.";
@@ -390,6 +388,7 @@
         }
 
         const submission = submissionData[0];
+        console.log("SUBMISSION:", submission);
 
         let peserta = null;
         if (submission.peserta_id) {
@@ -399,10 +398,7 @@
             .eq("id", submission.peserta_id)
             .limit(1);
 
-          if (pesertaError) {
-            throw pesertaError;
-          }
-
+          if (pesertaError) throw pesertaError;
           peserta = pesertaData && pesertaData.length > 0 ? pesertaData[0] : null;
         }
 
@@ -410,13 +406,14 @@
         if (isTrainingUnit(submission)) {
           const { data: unitTypeData, error: unitTypeError } = await window.sb
             .from("training_unit_types")
-            .select("unit_type, created_at")
+            .select("id, training_submission_id, unit_type, created_at")
             .eq("training_submission_id", submission.id)
             .order("created_at", { ascending: true });
 
-          if (unitTypeError) {
-            throw unitTypeError;
-          }
+          console.log("UNIT TYPE ERROR:", unitTypeError);
+          console.log("UNIT TYPE DATA:", unitTypeData);
+
+          if (unitTypeError) throw unitTypeError;
 
           unitTypes = (unitTypeData || [])
             .map(item => item.unit_type)
@@ -429,9 +426,7 @@
           .eq("training_submission_id", submission.id)
           .order("started_at", { ascending: true });
 
-        if (historyError) {
-          throw historyError;
-        }
+        if (historyError) throw historyError;
 
         const progressMap = getProgressStartMap(historyData || []);
 
@@ -465,9 +460,7 @@
           .eq("training_submission_id", submissionId)
           .order("started_at", { ascending: true });
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
         if (!data || data.length === 0) {
           historyMessage.textContent = "Belum ada riwayat progress.";
@@ -498,7 +491,6 @@
     async function initDetailPage() {
       const session = await requireAdminSession();
       if (!session) return;
-
       loadSubmissionDetail();
     }
 
