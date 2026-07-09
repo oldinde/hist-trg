@@ -83,7 +83,8 @@
     }
 
     .search-card,
-    .table-card {
+    .table-card,
+    .filter-card {
       background: white;
       border-radius: 12px;
       padding: 20px;
@@ -97,13 +98,19 @@
       flex-wrap: wrap;
     }
 
-    .search-row input {
-      flex: 1;
-      min-width: 220px;
+    .search-row input,
+    .search-row select {
+      min-width: 160px;
       padding: 12px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
       font-size: 14px;
+      background: white;
+    }
+
+    .search-row input {
+      flex: 1;
+      min-width: 220px;
       text-transform: uppercase;
     }
 
@@ -119,6 +126,14 @@
 
     .search-row button:hover {
       background: #1d4ed8;
+    }
+
+    .reset-btn {
+      background: #6b7280 !important;
+    }
+
+    .reset-btn:hover {
+      background: #4b5563 !important;
     }
 
     .helper-text {
@@ -142,6 +157,7 @@
       border-bottom: 1px solid #e5e7eb;
       text-align: left;
       font-size: 14px;
+      vertical-align: top;
     }
 
     th {
@@ -166,6 +182,24 @@
 
     .action-link:hover {
       text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .search-row {
+        flex-direction: column;
+      }
+
+      .search-row input,
+      .search-row select,
+      .search-row button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -195,12 +229,29 @@
       </div>
     </div>
 
+    <div class="filter-card">
+      <div class="section-title">Filter Periode Final Submitted</div>
+
+      <div class="search-row">
+        <select id="startMonth"></select>
+        <select id="startYear"></select>
+        <select id="endMonth"></select>
+        <select id="endYear"></select>
+        <button id="applyFilterBtn" type="button">Terapkan Filter</button>
+        <button id="resetFilterBtn" type="button" class="reset-btn">Reset</button>
+      </div>
+
+      <div class="helper-text" id="filterInfo">
+        Menampilkan semua data yang sudah final submit.
+      </div>
+    </div>
+
     <div class="search-card">
       <div class="section-title">Cari Peserta berdasarkan NRP</div>
 
       <div class="search-row">
         <input type="text" id="nrpSearchInput" placeholder="Masukkan NRP..." />
-        <button id="searchBtn">Cari</button>
+        <button id="searchBtn" type="button">Cari</button>
       </div>
 
       <div class="helper-text" id="searchMessage">
@@ -254,6 +305,34 @@
     const totalPesertaEl = document.getElementById("totalPeserta");
     const totalTrainingEl = document.getElementById("totalTraining");
 
+    const startMonthEl = document.getElementById("startMonth");
+    const startYearEl = document.getElementById("startYear");
+    const endMonthEl = document.getElementById("endMonth");
+    const endYearEl = document.getElementById("endYear");
+    const applyFilterBtn = document.getElementById("applyFilterBtn");
+    const resetFilterBtn = document.getElementById("resetFilterBtn");
+    const filterInfo = document.getElementById("filterInfo");
+
+    const MONTH_OPTIONS = [
+      { value: "01", label: "Januari" },
+      { value: "02", label: "Februari" },
+      { value: "03", label: "Maret" },
+      { value: "04", label: "April" },
+      { value: "05", label: "Mei" },
+      { value: "06", label: "Juni" },
+      { value: "07", label: "Juli" },
+      { value: "08", label: "Agustus" },
+      { value: "09", label: "September" },
+      { value: "10", label: "Oktober" },
+      { value: "11", label: "November" },
+      { value: "12", label: "Desember" }
+    ];
+
+    let currentFilter = {
+      startDate: null,
+      endDate: null
+    };
+
     nrpSearchInput.addEventListener("input", function () {
       let value = nrpSearchInput.value.toUpperCase();
       value = value.replace(/\s+/g, "");
@@ -274,29 +353,118 @@
       );
     }
 
+    function populateMonthOptions() {
+      const defaultOption = `<option value="">Pilih Bulan</option>`;
+      const monthHtml = MONTH_OPTIONS.map(
+        month => `<option value="${month.value}">${month.label}</option>`
+      ).join("");
+
+      startMonthEl.innerHTML = defaultOption + monthHtml;
+      endMonthEl.innerHTML = defaultOption + monthHtml;
+    }
+
+    function populateYearOptions() {
+      const currentYear = new Date().getFullYear();
+      const firstYear = 2024;
+      const defaultOption = `<option value="">Pilih Tahun</option>`;
+
+      let yearHtml = "";
+      for (let year = currentYear + 1; year >= firstYear; year--) {
+        yearHtml += `<option value="${year}">${year}</option>`;
+      }
+
+      startYearEl.innerHTML = defaultOption + yearHtml;
+      endYearEl.innerHTML = defaultOption + yearHtml;
+    }
+
+    function getMonthLabel(monthValue) {
+      const found = MONTH_OPTIONS.find(month => month.value === monthValue);
+      return found ? found.label : monthValue;
+    }
+
+    function buildFilterDates() {
+      const startMonth = startMonthEl.value;
+      const startYear = startYearEl.value;
+      const endMonth = endMonthEl.value;
+      const endYear = endYearEl.value;
+
+      if (!startMonth && !startYear && !endMonth && !endYear) {
+        return { startDate: null, endDate: null };
+      }
+
+      if (!startMonth || !startYear || !endMonth || !endYear) {
+        throw new Error("Filter periode harus diisi lengkap.");
+      }
+
+      const startDate = `${startYear}-${startMonth}-01T00:00:00`;
+
+      const lastDay = new Date(Number(endYear), Number(endMonth), 0).getDate();
+      const endDate = `${endYear}-${endMonth}-${String(lastDay).padStart(2, "0")}T23:59:59`;
+
+      if (new Date(startDate) > new Date(endDate)) {
+        throw new Error("Periode awal tidak boleh lebih besar dari periode akhir.");
+      }
+
+      return { startDate, endDate };
+    }
+
+    function updateFilterInfo() {
+      if (!currentFilter.startDate || !currentFilter.endDate) {
+        filterInfo.textContent = "Menampilkan semua data yang sudah final submit.";
+        filterInfo.style.color = "#6b7280";
+        return;
+      }
+
+      const start = new Date(currentFilter.startDate);
+      const end = new Date(currentFilter.endDate);
+
+      const startMonth = String(start.getMonth() + 1).padStart(2, "0");
+      const endMonth = String(end.getMonth() + 1).padStart(2, "0");
+
+      filterInfo.textContent =
+        `Menampilkan data dari ${getMonthLabel(startMonth)} ${start.getFullYear()} sampai ${getMonthLabel(endMonth)} ${end.getFullYear()}.`;
+      filterInfo.style.color = "#6b7280";
+    }
+
+    function applyFinalSubmittedFilter(query) {
+      if (currentFilter.startDate && currentFilter.endDate) {
+        return query
+          .not("final_submitted_at", "is", null)
+          .gte("final_submitted_at", currentFilter.startDate)
+          .lte("final_submitted_at", currentFilter.endDate);
+      }
+
+      return query.not("final_submitted_at", "is", null);
+    }
+
     async function loadSummaryStats() {
       try {
-        const { count: totalSubmission, error: submissionCountError } = await window.sb
+        let submissionCountQuery = window.sb
           .from("training_submissions")
           .select("*", { count: "exact", head: true });
 
+        submissionCountQuery = applyFinalSubmittedFilter(submissionCountQuery);
+
+        const { count: totalSubmission, error: submissionCountError } = await submissionCountQuery;
         if (submissionCountError) throw submissionCountError;
 
-        const { count: totalPeserta, error: pesertaCountError } = await window.sb
-          .from("peserta")
-          .select("*", { count: "exact", head: true });
-
-        if (pesertaCountError) throw pesertaCountError;
-
-        const { data: trainingData, error: trainingError } = await window.sb
+        let filteredSubmissionQuery = window.sb
           .from("training_submissions")
-          .select("kategori_pelatihan, jenis_pelatihan_unit, jenis_pelatihan_teknikal");
+          .select("peserta_id, kategori_pelatihan, jenis_pelatihan_unit, jenis_pelatihan_teknikal");
 
-        if (trainingError) throw trainingError;
+        filteredSubmissionQuery = applyFinalSubmittedFilter(filteredSubmissionQuery);
 
+        const { data: filteredSubmissions, error: filteredSubmissionsError } = await filteredSubmissionQuery;
+        if (filteredSubmissionsError) throw filteredSubmissionsError;
+
+        const uniquePesertaIds = new Set();
         const trainingSet = new Set();
 
-        (trainingData || []).forEach(item => {
+        (filteredSubmissions || []).forEach(item => {
+          if (item.peserta_id) {
+            uniquePesertaIds.add(item.peserta_id);
+          }
+
           const trainingName = getTrainingName(item);
           if (trainingName && trainingName !== "-") {
             trainingSet.add(trainingName);
@@ -304,7 +472,7 @@
         });
 
         totalSubmissionEl.textContent = totalSubmission ?? 0;
-        totalPesertaEl.textContent = totalPeserta ?? 0;
+        totalPesertaEl.textContent = uniquePesertaIds.size;
         totalTrainingEl.textContent = trainingSet.size;
       } catch (err) {
         console.error("LOAD SUMMARY STATS ERROR:", err);
@@ -322,7 +490,7 @@
       `;
 
       try {
-        const { data: submissions, error: submissionsError } = await window.sb
+        let submissionsQuery = window.sb
           .from("training_submissions")
           .select(`
             id,
@@ -333,17 +501,18 @@
             final_submitted_at,
             created_at
           `)
-          .order("created_at", { ascending: false })
+          .order("final_submitted_at", { ascending: false })
           .limit(10);
 
-        if (submissionsError) {
-          throw submissionsError;
-        }
+        submissionsQuery = applyFinalSubmittedFilter(submissionsQuery);
+
+        const { data: submissions, error: submissionsError } = await submissionsQuery;
+        if (submissionsError) throw submissionsError;
 
         if (!submissions || submissions.length === 0) {
           latestSubmissionsBody.innerHTML = `
             <tr>
-              <td colspan="6">Belum ada submission.</td>
+              <td colspan="6">Tidak ada submission pada periode ini.</td>
             </tr>
           `;
           return;
@@ -356,9 +525,7 @@
           .select("id, nrp, nama_lengkap")
           .in("id", pesertaIds);
 
-        if (pesertaError) {
-          throw pesertaError;
-        }
+        if (pesertaError) throw pesertaError;
 
         const pesertaMap = {};
         (pesertaList || []).forEach(item => {
@@ -393,6 +560,31 @@
       }
     }
 
+    async function refreshDashboardData() {
+      updateFilterInfo();
+      await loadSummaryStats();
+      await loadLatestSubmissions();
+    }
+
+    applyFilterBtn.addEventListener("click", async function () {
+      try {
+        currentFilter = buildFilterDates();
+        await refreshDashboardData();
+      } catch (err) {
+        filterInfo.textContent = err.message;
+        filterInfo.style.color = "red";
+      }
+    });
+
+    resetFilterBtn.addEventListener("click", async function () {
+      startMonthEl.value = "";
+      startYearEl.value = "";
+      endMonthEl.value = "";
+      endYearEl.value = "";
+      currentFilter = { startDate: null, endDate: null };
+      await refreshDashboardData();
+    });
+
     searchBtn.addEventListener("click", async function () {
       const nrp = nrpSearchInput.value.toUpperCase().replace(/\s+/g, "");
 
@@ -414,9 +606,7 @@
           .eq("nrp", nrp)
           .limit(1);
 
-        if (pesertaError) {
-          throw pesertaError;
-        }
+        if (pesertaError) throw pesertaError;
 
         if (!pesertaData || pesertaData.length === 0) {
           searchMessage.textContent = "Peserta dengan NRP tersebut tidak ditemukan.";
@@ -426,7 +616,7 @@
 
         const peserta = pesertaData[0];
 
-        const { data: submissions, error: submissionsError } = await window.sb
+        let submissionsQuery = window.sb
           .from("training_submissions")
           .select(`
             id,
@@ -440,14 +630,15 @@
             created_at
           `)
           .eq("peserta_id", peserta.id)
-          .order("created_at", { ascending: false });
+          .order("final_submitted_at", { ascending: false });
 
-        if (submissionsError) {
-          throw submissionsError;
-        }
+        submissionsQuery = applyFinalSubmittedFilter(submissionsQuery);
+
+        const { data: submissions, error: submissionsError } = await submissionsQuery;
+        if (submissionsError) throw submissionsError;
 
         if (!submissions || submissions.length === 0) {
-          searchMessage.textContent = "Peserta ditemukan, tetapi belum memiliki submission training.";
+          searchMessage.textContent = "Peserta ditemukan, tetapi tidak memiliki submission pada periode ini.";
           searchMessage.style.color = "#b45309";
 
           searchResult.innerHTML = `
@@ -465,7 +656,7 @@
                   <tr>
                     <td>${peserta.nrp ?? "-"}</td>
                     <td>${peserta.nama_lengkap ?? "-"}</td>
-                    <td>Belum ada submission</td>
+                    <td>Tidak ada submission pada periode ini</td>
                   </tr>
                 </tbody>
               </table>
@@ -520,8 +711,9 @@
       }
     });
 
-    loadSummaryStats();
-    loadLatestSubmissions();
+    populateMonthOptions();
+    populateYearOptions();
+    refreshDashboardData();
   </script>
 </body>
 </html>
