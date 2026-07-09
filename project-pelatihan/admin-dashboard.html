@@ -346,13 +346,14 @@
     ];
 
     const PROGRESS_OPTIONS = [
-      "In Class",
-      "Gerdas",
-      "In Field",
-      "OJT",
-      "Praktek",
-      "Selesai"
-    ];
+  { value: "in class", label: "In Class" },
+  { value: "gerdas", label: "Gerdas" },
+  { value: "in field", label: "In Field" },
+  { value: "ojt", label: "OJT" },
+  { value: "praktek", label: "Praktek" },
+  { value: "selesai", label: "Selesai" }
+];
+
 
     let currentFilter = {
       startDate: null,
@@ -479,10 +480,23 @@
     }
 
     function buildProgressSelect(submissionId, currentProgress, updatedAt) {
-      const optionsHtml = PROGRESS_OPTIONS.map(status => {
-        const selected = status === currentProgress ? "selected" : "";
-        return `<option value="${status}" ${selected}>${status}</option>`;
-      }).join("");
+  const optionsHtml = PROGRESS_OPTIONS.map(item => {
+    const selected = item.value === currentProgress ? "selected" : "";
+    return `<option value="${item.value}" ${selected}>${item.label}</option>`;
+  }).join("");
+
+  const note = updatedAt
+    ? `Update terakhir: ${formatDateTime(updatedAt)}`
+    : "Belum ada update progress";
+
+  return `
+    <select class="progress-select" data-submission-id="${submissionId}">
+      <option value="">Pilih progress</option>
+      ${optionsHtml}
+    </select>
+    <span class="progress-note">${note}</span>
+  `;
+}
 
       const note = updatedAt
         ? `Update terakhir: ${formatDateTime(updatedAt)}`
