@@ -257,32 +257,26 @@
         .replace(/'/g, "&#039;");
     }
 
+    function isTrainingUnit(submission) {
+      return (submission.kategori_pelatihan || "").toUpperCase() === "TRAINING UNIT";
+    }
+
     function isTeknikalPengawasGL(submission) {
       const kategori = (submission.kategori_pelatihan || "").toLowerCase();
       return kategori.includes("pengawas") || kategori.includes("gl");
     }
 
-    function isTrainingUnit(submission) {
-      return !!submission.jenis_pelatihan_unit;
-    }
-
-    function getTrainingDisplay(submission) {
+    function getTrainingDisplay(submission, unitTypes) {
       if (isTrainingUnit(submission)) {
         const training = submission.jenis_pelatihan_unit || "-";
-        const unitType = submission.unit_type || "-";
-        return unitType && unitType !== "-" ? `${training} ${unitType}` : training;
-      }
-
-      if (isTeknikalPengawasGL(submission)) {
-        const training = submission.jenis_pelatihan_teknikal || "-";
-        const kelas = submission.kelas_teknikal || "-";
-        return kelas && kelas !== "-" ? `${training} ${kelas}` : training;
+        const unitTypeText = (unitTypes || []).join(" ").trim();
+        return unitTypeText ? `${training} ${unitTypeText}` : training;
       }
 
       if (submission.jenis_pelatihan_teknikal) {
-        const training = submission.jenis_pelatihan_teknikal || "-";
+        const level = submission.jenis_pelatihan_teknikal || "-";
         const kelas = submission.kelas_teknikal || "-";
-        return kelas && kelas !== "-" ? `${training} ${kelas}` : training;
+        return kelas && kelas !== "-" ? `${level} ${kelas}` : level;
       }
 
       return submission.kategori_pelatihan || "-";
@@ -293,11 +287,7 @@
         return submission.wali_kelas_unit || "-";
       }
 
-      if (isTeknikalPengawasGL(submission)) {
-        return submission.wali_kelas_teknikal || "-";
-      }
-
-      return submission.wali_kelas_teknikal || submission.wali_kelas_unit || "-";
+      return submission.wali_kelas_teknikal || "-";
     }
 
     function getProgressStartMap(historyList) {
@@ -331,11 +321,11 @@
       `;
     }
 
-    function renderDetailGrid(submission, peserta, progressMap) {
+    function renderDetailGrid(submission, peserta, progressMap, unitTypes) {
       const departemen = peserta?.departemen || "-";
       const waliKelas = getWaliKelasValue(submission);
       const currentProgress = formatProgressLabel(submission.current_progress_status);
-      const trainingDisplay = getTrainingDisplay(submission);
+      const trainingDisplay = getTrainingDisplay(submission, unitTypes);
 
       let html = "";
 
@@ -385,18 +375,7 @@
       try {
         const { data: submissionData, error: submissionError } = await window.sb
           .from("training_submissions")
-          .select(`
-            id,
-            peserta_id,
-            kategori_pelatihan,
-            jenis_pelatihan_unit,
-            unit_type,
-            jenis_pelatihan_teknikal,
-            kelas_teknikal,
-            current_progress_status,
-            wali_kelas_unit,
-            wali_kelas_teknikal
-          `)
+          .select("*")
           .eq("id", submissionId)
           .limit(1);
 
@@ -413,16 +392,10 @@
         const submission = submissionData[0];
 
         let peserta = null;
-
         if (submission.peserta_id) {
           const { data: pesertaData, error: pesertaError } = await window.sb
             .from("peserta")
-            .select(`
-              id,
-              nrp,
-              nama_lengkap,
-              departemen
-            `)
+            .select("id, nrp, nama_lengkap, departemen")
             .eq("id", submission.peserta_id)
             .limit(1);
 
@@ -431,6 +404,23 @@
           }
 
           peserta = pesertaData && pesertaData.length > 0 ? pesertaData[0] : null;
+        }
+
+        let unitTypes = [];
+        if (isTrainingUnit(submission)) {
+          const { data: unitTypeData, error: unitTypeError } = await window.sb
+            .from("training_unit_types")
+            .select("unit_type, created_at")
+            .eq("training_submission_id", submission.id)
+            .order("created_at", { ascending: true });
+
+          if (unitTypeError) {
+            throw unitTypeError;
+          }
+
+          unitTypes = (unitTypeData || [])
+            .map(item => item.unit_type)
+            .filter(Boolean);
         }
 
         const { data: historyData, error: historyError } = await window.sb
@@ -445,7 +435,7 @@
 
         const progressMap = getProgressStartMap(historyData || []);
 
-        renderDetailGrid(submission, peserta, progressMap);
+        renderDetailGrid(submission, peserta, progressMap, unitTypes);
 
         detailMessage.style.display = "none";
         detailContent.style.display = "block";
