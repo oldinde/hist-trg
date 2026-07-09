@@ -147,11 +147,6 @@
       color: #374151;
     }
 
-    .muted {
-      color: #6b7280;
-      font-size: 13px;
-    }
-
     @media (max-width: 768px) {
       .header {
         align-items: flex-start;
@@ -273,14 +268,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config/supabase.js"></script>
+  <script src="config/admin-auth.js"></script>
 
   <script>
-    const isLoggedIn = localStorage.getItem("adminLoggedIn");
-
-    if (isLoggedIn !== "true") {
-      window.location.href = "admin-login.html";
-    }
-
     const backBtn = document.getElementById("backBtn");
     const logoutBtn = document.getElementById("logoutBtn");
 
@@ -309,9 +299,8 @@
       window.location.href = "admin-dashboard.html";
     });
 
-    logoutBtn.addEventListener("click", function () {
-      localStorage.removeItem("adminLoggedIn");
-      window.location.href = "admin-login.html";
+    logoutBtn.addEventListener("click", async function () {
+      await logoutAdmin();
     });
 
     function formatDateTime(value) {
@@ -470,7 +459,14 @@
       }
     }
 
-    loadSubmissionDetail();
+    async function initDetailPage() {
+      const session = await requireAdminSession();
+      if (!session) return;
+
+      loadSubmissionDetail();
+    }
+
+    initDetailPage();
   </script>
 </body>
 </html>
