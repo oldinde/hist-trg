@@ -497,20 +497,7 @@
     <span class="progress-note">${note}</span>
   `;
 }
-
-      const note = updatedAt
-        ? `Update terakhir: ${formatDateTime(updatedAt)}`
-        : "Belum ada update progress";
-
-      return `
-        <select class="progress-select" data-submission-id="${submissionId}">
-          <option value="">Pilih progress</option>
-          ${optionsHtml}
-        </select>
-        <span class="progress-note">${note}</span>
-      `;
-    }
-
+    
     async function loadSummaryStats() {
       try {
         let submissionCountQuery = window.sb
