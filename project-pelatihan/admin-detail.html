@@ -178,68 +178,7 @@
 
       <div id="detailContent" style="display:none;">
         <h2 class="section-title">Informasi Submission</h2>
-
-        <div class="detail-grid">
-          <div class="detail-item">
-            <div class="detail-label">ID Submission</div>
-            <div class="detail-value" id="detailSubmissionId">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">NRP</div>
-            <div class="detail-value" id="detailNrp">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Nama Peserta</div>
-            <div class="detail-value" id="detailNama">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Training</div>
-            <div class="detail-value" id="detailTraining">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Kategori Pelatihan</div>
-            <div class="detail-value" id="detailKategori">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Group EGI</div>
-            <div class="detail-value" id="detailGroupEgi">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Kelas Teknikal</div>
-            <div class="detail-value" id="detailKelasTeknikal">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Tempat Penyelenggaraan</div>
-            <div class="detail-value" id="detailTempat">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Tanggal Final Submit</div>
-            <div class="detail-value" id="detailSubmittedAt">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Dibuat Pada</div>
-            <div class="detail-value" id="detailCreatedAt">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Current Progress</div>
-            <div class="detail-value" id="detailCurrentProgress">-</div>
-          </div>
-
-          <div class="detail-item">
-            <div class="detail-label">Terakhir Update Progress</div>
-            <div class="detail-value" id="detailProgressUpdatedAt">-</div>
-          </div>
-        </div>
+        <div id="detailGrid" class="detail-grid"></div>
       </div>
     </div>
 
@@ -276,19 +215,7 @@
 
     const detailMessage = document.getElementById("detailMessage");
     const detailContent = document.getElementById("detailContent");
-
-    const detailSubmissionId = document.getElementById("detailSubmissionId");
-    const detailNrp = document.getElementById("detailNrp");
-    const detailNama = document.getElementById("detailNama");
-    const detailTraining = document.getElementById("detailTraining");
-    const detailKategori = document.getElementById("detailKategori");
-    const detailGroupEgi = document.getElementById("detailGroupEgi");
-    const detailKelasTeknikal = document.getElementById("detailKelasTeknikal");
-    const detailTempat = document.getElementById("detailTempat");
-    const detailSubmittedAt = document.getElementById("detailSubmittedAt");
-    const detailCreatedAt = document.getElementById("detailCreatedAt");
-    const detailCurrentProgress = document.getElementById("detailCurrentProgress");
-    const detailProgressUpdatedAt = document.getElementById("detailProgressUpdatedAt");
+    const detailGrid = document.getElementById("detailGrid");
 
     const historyCard = document.getElementById("historyCard");
     const historyMessage = document.getElementById("historyMessage");
@@ -317,17 +244,132 @@
         "praktek": "Praktek",
         "selesai": "Selesai"
       };
-
       return map[value] || value || "-";
     }
 
-    function getTrainingName(item) {
-      return (
-        item.jenis_pelatihan_unit ||
-        item.jenis_pelatihan_teknikal ||
-        item.kategori_pelatihan ||
-        "-"
-      );
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return "-";
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function isTeknikalPengawasGL(submission) {
+      const kategori = (submission.kategori_pelatihan || "").toLowerCase();
+      return kategori.includes("pengawas") || kategori.includes("gl");
+    }
+
+    function isTrainingUnit(submission) {
+      return !!submission.jenis_pelatihan_unit;
+    }
+
+    function getTrainingDisplay(submission) {
+      if (isTrainingUnit(submission)) {
+        const training = submission.jenis_pelatihan_unit || "-";
+        const typeUnit = submission.group_egi || "-";
+        return typeUnit && typeUnit !== "-" ? `${training} ${typeUnit}` : training;
+      }
+
+      if (isTeknikalPengawasGL(submission)) {
+        const training = submission.jenis_pelatihan_teknikal || "-";
+        const kelas = submission.kelas_teknikal || "-";
+        return kelas && kelas !== "-" ? `${training} - ${kelas}` : training;
+      }
+
+      if (submission.jenis_pelatihan_teknikal) {
+        const training = submission.jenis_pelatihan_teknikal || "-";
+        const kelas = submission.kelas_teknikal || "-";
+        return kelas && kelas !== "-" ? `${training} - ${kelas}` : training;
+      }
+
+      return submission.kategori_pelatihan || "-";
+    }
+
+    function getWaliKelasValue(submission) {
+      if (isTrainingUnit(submission)) {
+        return submission.wali_kelas_unit || "-";
+      }
+
+      if (isTeknikalPengawasGL(submission)) {
+        return submission.wali_kelas_teknikal || "-";
+      }
+
+      return submission.wali_kelas_teknikal || submission.wali_kelas_unit || "-";
+    }
+
+    function getProgressStartMap(historyList) {
+      const map = {
+        "in class": null,
+        "gerdas": null,
+        "in field": null,
+        "ojt": null,
+        "praktek": null,
+        "selesai": null
+      };
+
+      (historyList || []).forEach(item => {
+        const status = (item.status || "").toLowerCase();
+        if (!map[status] && item.started_at) {
+          map[status] = item.started_at;
+        }
+      });
+
+      return map;
+    }
+
+    function createDetailItem(label, value, isBadge = false) {
+      return `
+        <div class="detail-item">
+          <div class="detail-label">${escapeHtml(label)}</div>
+          <div class="detail-value">
+            ${isBadge ? `<span class="badge">${escapeHtml(value)}</span>` : escapeHtml(value)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDetailGrid(submission, peserta, progressMap) {
+      const departemen = peserta?.departemen || "-";
+      const waliKelas = getWaliKelasValue(submission);
+      const currentProgress = formatProgressLabel(submission.current_progress_status);
+      const trainingDisplay = getTrainingDisplay(submission);
+
+      let html = "";
+
+      if (isTrainingUnit(submission)) {
+        html += createDetailItem("Nama", peserta?.nama_lengkap || "-");
+        html += createDetailItem("NRP", peserta?.nrp || "-");
+        html += createDetailItem("Departemen", departemen);
+        html += createDetailItem("Training", trainingDisplay);
+        html += createDetailItem("Wali Kelas", waliKelas);
+        html += createDetailItem("Mulai In Class", formatDateTime(progressMap["in class"]));
+        html += createDetailItem("Mulai In Field", formatDateTime(progressMap["in field"]));
+        html += createDetailItem("Mulai OJT", formatDateTime(progressMap["ojt"]));
+        html += createDetailItem("Mulai Praktek", formatDateTime(progressMap["praktek"]));
+        html += createDetailItem("Tanggal Selesai", formatDateTime(progressMap["selesai"]));
+        html += createDetailItem("Current Progress", currentProgress, true);
+      } else if (isTeknikalPengawasGL(submission)) {
+        html += createDetailItem("Nama", peserta?.nama_lengkap || "-");
+        html += createDetailItem("NRP", peserta?.nrp || "-");
+        html += createDetailItem("Departemen", departemen);
+        html += createDetailItem("Training", trainingDisplay);
+        html += createDetailItem("Wali Kelas", waliKelas);
+        html += createDetailItem("Mulai In Class", formatDateTime(progressMap["in class"]));
+        html += createDetailItem("Mulai Praktek", formatDateTime(progressMap["praktek"]));
+        html += createDetailItem("Current Progress", currentProgress, true);
+      } else {
+        html += createDetailItem("Nama", peserta?.nama_lengkap || "-");
+        html += createDetailItem("NRP", peserta?.nrp || "-");
+        html += createDetailItem("Departemen", departemen);
+        html += createDetailItem("Training", trainingDisplay);
+        html += createDetailItem("Wali Kelas", waliKelas);
+        html += createDetailItem("Current Progress", currentProgress, true);
+      }
+
+      detailGrid.innerHTML = html;
     }
 
     async function loadSubmissionDetail() {
@@ -351,11 +393,9 @@
             jenis_pelatihan_teknikal,
             group_egi,
             kelas_teknikal,
-            tempat_penyelenggaraan,
-            final_submitted_at,
-            created_at,
             current_progress_status,
-            current_progress_updated_at
+            wali_kelas_unit,
+            wali_kelas_teknikal
           `)
           .eq("id", submissionId)
           .limit(1);
@@ -377,7 +417,12 @@
         if (submission.peserta_id) {
           const { data: pesertaData, error: pesertaError } = await window.sb
             .from("peserta")
-            .select("id, nrp, nama_lengkap")
+            .select(`
+              id,
+              nrp,
+              nama_lengkap,
+              departemen
+            `)
             .eq("id", submission.peserta_id)
             .limit(1);
 
@@ -388,18 +433,19 @@
           peserta = pesertaData && pesertaData.length > 0 ? pesertaData[0] : null;
         }
 
-        detailSubmissionId.textContent = submission.id ?? "-";
-        detailNrp.textContent = peserta?.nrp ?? "-";
-        detailNama.textContent = peserta?.nama_lengkap ?? "-";
-        detailTraining.textContent = getTrainingName(submission);
-        detailKategori.textContent = submission.kategori_pelatihan ?? "-";
-        detailGroupEgi.textContent = submission.group_egi ?? "-";
-        detailKelasTeknikal.textContent = submission.kelas_teknikal ?? "-";
-        detailTempat.textContent = submission.tempat_penyelenggaraan ?? "-";
-        detailSubmittedAt.textContent = formatDateTime(submission.final_submitted_at);
-        detailCreatedAt.textContent = formatDateTime(submission.created_at);
-        detailCurrentProgress.innerHTML = `<span class="badge">${formatProgressLabel(submission.current_progress_status)}</span>`;
-        detailProgressUpdatedAt.textContent = formatDateTime(submission.current_progress_updated_at);
+        const { data: historyData, error: historyError } = await window.sb
+          .from("training_progress_history")
+          .select("id, status, started_at, ended_at")
+          .eq("training_submission_id", submission.id)
+          .order("started_at", { ascending: true });
+
+        if (historyError) {
+          throw historyError;
+        }
+
+        const progressMap = getProgressStartMap(historyData || []);
+
+        renderDetailGrid(submission, peserta, progressMap);
 
         detailMessage.style.display = "none";
         detailContent.style.display = "block";
@@ -442,9 +488,9 @@
         const rowsHtml = data.map(item => {
           return `
             <tr>
-              <td>${formatProgressLabel(item.status)}</td>
-              <td>${formatDateTime(item.started_at)}</td>
-              <td>${formatDateTime(item.ended_at)}</td>
+              <td>${escapeHtml(formatProgressLabel(item.status))}</td>
+              <td>${escapeHtml(formatDateTime(item.started_at))}</td>
+              <td>${escapeHtml(formatDateTime(item.ended_at))}</td>
             </tr>
           `;
         }).join("");
