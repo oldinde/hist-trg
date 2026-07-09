@@ -104,6 +104,7 @@
       border: 1px solid #d1d5db;
       border-radius: 8px;
       font-size: 14px;
+      text-transform: uppercase;
     }
 
     .search-row button {
@@ -180,17 +181,17 @@
     <div class="stats-grid">
       <div class="stat-card">
         <h3>Total Submission</h3>
-        <p>128</p>
+        <p id="totalSubmission">0</p>
       </div>
 
       <div class="stat-card">
         <h3>Total Peserta</h3>
-        <p>104</p>
+        <p id="totalPeserta">0</p>
       </div>
 
       <div class="stat-card">
         <h3>Total Training</h3>
-        <p>7</p>
+        <p id="totalTraining">0</p>
       </div>
     </div>
 
@@ -205,6 +206,7 @@
       <div class="helper-text" id="searchMessage">
         Masukkan NRP untuk mencari data peserta.
       </div>
+
       <div id="searchResult" style="margin-top:16px;"></div>
     </div>
 
@@ -223,11 +225,10 @@
           </tr>
         </thead>
         <tbody id="latestSubmissionsBody">
-  <tr>
-    <td colspan="6">Memuat data...</td>
-  </tr>
-</tbody>
-
+          <tr>
+            <td colspan="6">Memuat data...</td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -236,234 +237,291 @@
   <script src="config/supabase.js"></script>
 
   <script>
-  const isLoggedIn = localStorage.getItem("adminLoggedIn");
+    const isLoggedIn = localStorage.getItem("adminLoggedIn");
 
-  if (isLoggedIn !== "true") {
-    window.location.href = "admin-login.html";
-  }
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  const searchBtn = document.getElementById("searchBtn");
-  const nrpSearchInput = document.getElementById("nrpSearchInput");
-  nrpSearchInput.addEventListener("input", function () {
-  let value = nrpSearchInput.value.toUpperCase();
-  value = value.replace(/\s+/g, "");
-  nrpSearchInput.value = value;
-});
-  const searchMessage = document.getElementById("searchMessage");
-  const searchResult = document.getElementById("searchResult");
-  const latestSubmissionsBody = document.getElementById("latestSubmissionsBody");
-
-
-  logoutBtn.addEventListener("click", function () {
-    localStorage.removeItem("adminLoggedIn");
-    window.location.href = "admin-login.html";
-  });
-
-  async function loadLatestSubmissions() {
-  latestSubmissionsBody.innerHTML = `
-    <tr>
-      <td colspan="6">Memuat data...</td>
-    </tr>
-  `;
-
-  try {
-    const { data, error } = await window.sb
-      .from("training_submissions")
-      .select(`
-        id,
-        kategori_pelatihan,
-        jenis_pelatihan_unit,
-        jenis_pelatihan_teknikal,
-        final_submitted_at,
-        created_at,
-        peserta (
-          nrp,
-          nama_lengkap
-        )
-      `)
-      .order("created_at", { ascending: false })
-      .limit(10);
-
-    if (error) {
-      throw error;
+    if (isLoggedIn !== "true") {
+      window.location.href = "admin-login.html";
     }
 
-    if (!data || data.length === 0) {
-      latestSubmissionsBody.innerHTML = `
-        <tr>
-          <td colspan="6">Belum ada submission.</td>
-        </tr>
-      `;
-      return;
-    }
+    const logoutBtn = document.getElementById("logoutBtn");
+    const searchBtn = document.getElementById("searchBtn");
+    const nrpSearchInput = document.getElementById("nrpSearchInput");
+    const searchMessage = document.getElementById("searchMessage");
+    const searchResult = document.getElementById("searchResult");
+    const latestSubmissionsBody = document.getElementById("latestSubmissionsBody");
 
-    const rowsHtml = data.map(item => {
-      const peserta = Array.isArray(item.peserta) ? item.peserta[0] : item.peserta;
-      const namaTraining =
+    const totalSubmissionEl = document.getElementById("totalSubmission");
+    const totalPesertaEl = document.getElementById("totalPeserta");
+    const totalTrainingEl = document.getElementById("totalTraining");
+
+    nrpSearchInput.addEventListener("input", function () {
+      let value = nrpSearchInput.value.toUpperCase();
+      value = value.replace(/\s+/g, "");
+      nrpSearchInput.value = value;
+    });
+
+    logoutBtn.addEventListener("click", function () {
+      localStorage.removeItem("adminLoggedIn");
+      window.location.href = "admin-login.html";
+    });
+
+    function getTrainingName(item) {
+      return (
         item.jenis_pelatihan_unit ||
         item.jenis_pelatihan_teknikal ||
         item.kategori_pelatihan ||
-        "-";
-
-      const tanggal = item.final_submitted_at || item.created_at;
-
-      return `
-        <tr>
-          <td>${peserta?.nrp ?? "-"}</td>
-          <td>${peserta?.nama_lengkap ?? "-"}</td>
-          <td>${namaTraining}</td>
-          <td>${tanggal ? new Date(tanggal).toLocaleDateString("id-ID") : "-"}</td>
-          <td><span class="badge">Submitted</span></td>
-          <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
-        </tr>
-      `;
-    }).join("");
-
-    latestSubmissionsBody.innerHTML = rowsHtml;
-  } catch (err) {
-    console.error("LOAD LATEST SUBMISSIONS ERROR:", err);
-    latestSubmissionsBody.innerHTML = `
-      <tr>
-        <td colspan="6">Gagal memuat data submission terbaru.</td>
-      </tr>
-    `;
-  }
-}
-
-  searchBtn.addEventListener("click", async function () {
-    const nrp = nrpSearchInput.value.toUpperCase().replace(/\s+/g, "");
-
-    searchResult.innerHTML = "";
-
-    if (!nrp) {
-      searchMessage.textContent = "NRP harus diisi.";
-      searchMessage.style.color = "red";
-      return;
+        "-"
+      );
     }
 
-    searchMessage.textContent = "Mencari data...";
-    searchMessage.style.color = "#6b7280";
+    async function loadSummaryStats() {
+      try {
+        const { count: totalSubmission, error: submissionCountError } = await window.sb
+          .from("training_submissions")
+          .select("*", { count: "exact", head: true });
 
-    try {
-      // 1. Cari peserta berdasarkan NRP
-      const { data: pesertaData, error: pesertaError } = await window.sb
-        .from("peserta")
-        .select("id, nrp, nama_lengkap")
-        .eq("nrp", nrp)
-        .limit(1);
+        if (submissionCountError) throw submissionCountError;
 
-      if (pesertaError) {
-        throw pesertaError;
+        const { count: totalPeserta, error: pesertaCountError } = await window.sb
+          .from("peserta")
+          .select("*", { count: "exact", head: true });
+
+        if (pesertaCountError) throw pesertaCountError;
+
+        const { data: trainingData, error: trainingError } = await window.sb
+          .from("training_submissions")
+          .select("kategori_pelatihan, jenis_pelatihan_unit, jenis_pelatihan_teknikal");
+
+        if (trainingError) throw trainingError;
+
+        const trainingSet = new Set();
+
+        (trainingData || []).forEach(item => {
+          const trainingName = getTrainingName(item);
+          if (trainingName && trainingName !== "-") {
+            trainingSet.add(trainingName);
+          }
+        });
+
+        totalSubmissionEl.textContent = totalSubmission ?? 0;
+        totalPesertaEl.textContent = totalPeserta ?? 0;
+        totalTrainingEl.textContent = trainingSet.size;
+      } catch (err) {
+        console.error("LOAD SUMMARY STATS ERROR:", err);
+        totalSubmissionEl.textContent = "0";
+        totalPesertaEl.textContent = "0";
+        totalTrainingEl.textContent = "0";
       }
+    }
 
-      if (!pesertaData || pesertaData.length === 0) {
-        searchMessage.textContent = "Peserta dengan NRP tersebut tidak ditemukan.";
+    async function loadLatestSubmissions() {
+      latestSubmissionsBody.innerHTML = `
+        <tr>
+          <td colspan="6">Memuat data...</td>
+        </tr>
+      `;
+
+      try {
+        const { data: submissions, error: submissionsError } = await window.sb
+          .from("training_submissions")
+          .select(`
+            id,
+            peserta_id,
+            kategori_pelatihan,
+            jenis_pelatihan_unit,
+            jenis_pelatihan_teknikal,
+            final_submitted_at,
+            created_at
+          `)
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (submissionsError) {
+          throw submissionsError;
+        }
+
+        if (!submissions || submissions.length === 0) {
+          latestSubmissionsBody.innerHTML = `
+            <tr>
+              <td colspan="6">Belum ada submission.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        const pesertaIds = submissions.map(item => item.peserta_id).filter(Boolean);
+
+        const { data: pesertaList, error: pesertaError } = await window.sb
+          .from("peserta")
+          .select("id, nrp, nama_lengkap")
+          .in("id", pesertaIds);
+
+        if (pesertaError) {
+          throw pesertaError;
+        }
+
+        const pesertaMap = {};
+        (pesertaList || []).forEach(item => {
+          pesertaMap[item.id] = item;
+        });
+
+        const rowsHtml = submissions.map(item => {
+          const peserta = pesertaMap[item.peserta_id];
+          const namaTraining = getTrainingName(item);
+          const tanggal = item.final_submitted_at || item.created_at;
+
+          return `
+            <tr>
+              <td>${peserta?.nrp ?? "-"}</td>
+              <td>${peserta?.nama_lengkap ?? "-"}</td>
+              <td>${namaTraining}</td>
+              <td>${tanggal ? new Date(tanggal).toLocaleString("id-ID") : "-"}</td>
+              <td><span class="badge">Submitted</span></td>
+              <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
+            </tr>
+          `;
+        }).join("");
+
+        latestSubmissionsBody.innerHTML = rowsHtml;
+      } catch (err) {
+        console.error("LOAD LATEST SUBMISSIONS ERROR:", err);
+        latestSubmissionsBody.innerHTML = `
+          <tr>
+            <td colspan="6">Gagal memuat data submission terbaru.</td>
+          </tr>
+        `;
+      }
+    }
+
+    searchBtn.addEventListener("click", async function () {
+      const nrp = nrpSearchInput.value.toUpperCase().replace(/\s+/g, "");
+
+      searchResult.innerHTML = "";
+
+      if (!nrp) {
+        searchMessage.textContent = "NRP harus diisi.";
         searchMessage.style.color = "red";
         return;
       }
 
-      const peserta = pesertaData[0];
+      searchMessage.textContent = "Mencari data...";
+      searchMessage.style.color = "#6b7280";
 
-      // 2. Cari submission milik peserta tersebut
-      const { data: submissions, error: submissionsError } = await window.sb
-        .from("training_submissions")
-        .select(`
-          id,
-          kategori_pelatihan,
-          jenis_pelatihan_unit,
-          jenis_pelatihan_teknikal,
-          group_egi,
-          kelas_teknikal,
-          tempat_penyelenggaraan,
-          final_submitted_at,
-          created_at
-        `)
-        .eq("peserta_id", peserta.id)
-        .order("created_at", { ascending: false });
+      try {
+        const { data: pesertaData, error: pesertaError } = await window.sb
+          .from("peserta")
+          .select("id, nrp, nama_lengkap")
+          .eq("nrp", nrp)
+          .limit(1);
 
-      if (submissionsError) {
-        throw submissionsError;
-      }
+        if (pesertaError) {
+          throw pesertaError;
+        }
 
-      if (!submissions || submissions.length === 0) {
-        searchMessage.textContent = `Peserta ditemukan, tetapi belum memiliki submission training.`;
-        searchMessage.style.color = "#b45309";
+        if (!pesertaData || pesertaData.length === 0) {
+          searchMessage.textContent = "Peserta dengan NRP tersebut tidak ditemukan.";
+          searchMessage.style.color = "red";
+          return;
+        }
+
+        const peserta = pesertaData[0];
+
+        const { data: submissions, error: submissionsError } = await window.sb
+          .from("training_submissions")
+          .select(`
+            id,
+            kategori_pelatihan,
+            jenis_pelatihan_unit,
+            jenis_pelatihan_teknikal,
+            group_egi,
+            kelas_teknikal,
+            tempat_penyelenggaraan,
+            final_submitted_at,
+            created_at
+          `)
+          .eq("peserta_id", peserta.id)
+          .order("created_at", { ascending: false });
+
+        if (submissionsError) {
+          throw submissionsError;
+        }
+
+        if (!submissions || submissions.length === 0) {
+          searchMessage.textContent = "Peserta ditemukan, tetapi belum memiliki submission training.";
+          searchMessage.style.color = "#b45309";
+
+          searchResult.innerHTML = `
+            <div class="table-card" style="margin-bottom:0;">
+              <div class="section-title">Data Peserta</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>NRP</th>
+                    <th>Nama</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${peserta.nrp ?? "-"}</td>
+                    <td>${peserta.nama_lengkap ?? "-"}</td>
+                    <td>Belum ada submission</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+          return;
+        }
+
+        searchMessage.textContent = `Ditemukan ${submissions.length} submission untuk NRP ${nrp}.`;
+        searchMessage.style.color = "green";
+
+        const rowsHtml = submissions.map(item => {
+          const namaTraining = getTrainingName(item);
+          const tanggal = item.final_submitted_at || item.created_at;
+
+          return `
+            <tr>
+              <td>${peserta.nrp ?? "-"}</td>
+              <td>${peserta.nama_lengkap ?? "-"}</td>
+              <td>${namaTraining}</td>
+              <td>${tanggal ? new Date(tanggal).toLocaleString("id-ID") : "-"}</td>
+              <td><span class="badge">Submitted</span></td>
+              <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
+            </tr>
+          `;
+        }).join("");
 
         searchResult.innerHTML = `
           <div class="table-card" style="margin-bottom:0;">
-            <div class="section-title">Data Peserta</div>
+            <div class="section-title">Hasil Pencarian</div>
             <table>
               <thead>
                 <tr>
                   <th>NRP</th>
                   <th>Nama</th>
+                  <th>Training</th>
+                  <th>Tanggal</th>
                   <th>Status</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>${peserta.nrp ?? "-"}</td>
-                  <td>${peserta.nama_lengkap ?? "-"}</td>
-                  <td>Belum ada submission</td>
-                </tr>
+                ${rowsHtml}
               </tbody>
             </table>
           </div>
         `;
-        return;
+      } catch (err) {
+        console.error("SEARCH ERROR:", err);
+        searchMessage.textContent = "Terjadi kesalahan saat mengambil data.";
+        searchMessage.style.color = "red";
       }
+    });
 
-      searchMessage.textContent = `Ditemukan ${submissions.length} submission untuk NRP ${nrp}.`;
-      searchMessage.style.color = "green";
-
-      const rowsHtml = submissions.map(item => {
-        const namaTraining =
-          item.jenis_pelatihan_unit ||
-          item.jenis_pelatihan_teknikal ||
-          item.kategori_pelatihan ||
-          "-";
-
-        const tanggal = item.final_submitted_at || item.created_at;
-
-        return `
-          <tr>
-            <td>${peserta.nrp ?? "-"}</td>
-            <td>${peserta.nama_lengkap ?? "-"}</td>
-            <td>${namaTraining}</td>
-            <td>${tanggal ? new Date(tanggal).toLocaleString("id-ID") : "-"}</td>
-            <td><span class="badge">Submitted</span></td>
-            <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
-          </tr>
-        `;
-      }).join("");
-
-      searchResult.innerHTML = `
-        <div class="table-card" style="margin-bottom:0;">
-          <div class="section-title">Hasil Pencarian</div>
-          <table>
-            <thead>
-              <tr>
-                <th>NRP</th>
-                <th>Nama</th>
-                <th>Training</th>
-                <th>Tanggal</th>
-                <th>Status</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
-        </div>
-      `;
-    } catch (err) {
-      console.error(err);
-      searchMessage.textContent = "Terjadi kesalahan saat mengambil data.";
-      searchMessage.style.color = "red";
-    }
-  });
-</script>
+    loadSummaryStats();
+    loadLatestSubmissions();
+  </script>
 </body>
 </html>
