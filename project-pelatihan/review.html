@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Data Diri Peserta</title>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/peserta.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="review-paper">
+      <div class="review-paper-header">
+        <div class="review-paper-logo">
+          <img src="assets/img/logo-perusahaan.png" alt="Logo Perusahaan" />
+        </div>
+
+        <div class="review-paper-title">
+          <h1>DATA PESERTA PELATIHAN</h1>
+          <h2>( TRAINEES DATA )</h2>
+        </div>
+      </div>
+
+      <p class="review-note">Mohon periksa kembali seluruh data berikut sebelum melanjutkan.</p>
+
+      <div class="review-formal-section">
+        <div class="review-line">
+          <div class="review-line-label">Nama lengkap</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvNamaLengkap"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Tempat & Tanggal lahir</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvTempatTanggalLahir"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Agama</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvAgama"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">NRP</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvNrp"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Golongan / Jabatan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvGolonganJabatan"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Departemen</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvDepartemen"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Nama Perusahaan / Cabang</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvNamaPerusahaan"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Tanggal masuk kerja</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvTanggalMasukKerja"></div>
+        </div>
+
+        <div class="review-line review-line-multiline">
+          <div class="review-line-label">Alamat Perusahaan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvAlamatPerusahaan"></div>
+        </div>
+
+        <div class="review-line review-line-multiline">
+          <div class="review-line-label">Alamat tempat tinggal</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvAlamatTinggal"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">NIK</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvNik"></div>
+        </div>
+
+        <div class="review-line review-line-multiline">
+          <div class="review-line-label">Alamat sesuai KTP</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvAlamatKtp"></div>
+        </div>
+
+        <div class="review-line review-line-education">
+          <div class="review-line-label">Pendidikan terakhir</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value review-line-value-education">
+            <div class="education-options">
+              <span class="education-item" id="eduSD">SD</span>
+              <span class="education-item" id="eduSMP">SLTP</span>
+              <span class="education-item" id="eduSMAK">SMU/SMK</span>
+              <span class="education-item" id="eduD3">D3</span>
+              <span class="education-item" id="eduS1">S1</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-line" id="jurusanLine">
+          <div class="review-line-label">Jurusan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvJurusan"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Kategori Pelatihan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvKategoriPelatihan"></div>
+        </div>
+
+        <div class="review-line review-line-multiline">
+          <div class="review-line-label">Pelatihan yang akan diikuti</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvPelatihanLengkap"></div>
+        </div>
+
+        <div class="review-line" id="rvWaliKelasUnitLine">
+          <div class="review-line-label">Wali Kelas / Pengajar</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvWaliKelasUnit"></div>
+        </div>
+
+        <div class="review-line" id="rvWaliKelasTeknikalLine">
+          <div class="review-line-label">Wali Kelas</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvWaliKelasTeknikal"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Periode Pelatihan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvPeriodePelatihan"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Tempat penyelenggaraan</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvTempatPenyelenggaraan"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">File KTP</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvFileKtp"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Memiliki SIMPER?</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvMemilikiSimper"></div>
+        </div>
+
+        <div class="review-line">
+          <div class="review-line-label">Dokumen Izin Operasional</div>
+          <div class="review-line-separator">:</div>
+          <div class="review-line-value" id="rvDokumenIzinOperasional"></div>
+        </div>
+      </div>
+
+      <div class="review-table-section">
+        <div class="review-table-title">Pelatihan yang pernah diikuti</div>
+        <div class="table-wrap">
+          <table class="formal-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Pelatihan</th>
+                <th>Lembaga Pelatihan</th>
+                <th>Bulan/Tahun</th>
+              </tr>
+            </thead>
+            <tbody id="reviewRiwayatPelatihanBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="review-table-section">
+        <div class="review-table-title">Pengalaman kerja</div>
+        <div class="table-wrap">
+          <table class="formal-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Perusahaan</th>
+                <th>Jabatan</th>
+                <th>Tahun Mulai</th>
+                <th>Tahun Selesai</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="reviewPengalamanKerjaBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="reviewTeknikalApproval" class="review-teknikal-approval" style="display: none;">
+        <div class="agreement-box">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="reviewSetujuDataBenar" />
+            <span>Saya menyatakan bahwa seluruh data yang saya isi sudah benar.</span>
+          </label>
+        </div>
+
+        <div class="signature-box">
+          <label for="reviewSignatureCanvas"><strong>Tanda Tangan Peserta</strong></label>
+          <canvas id="reviewSignatureCanvas" class="signature-pad"></canvas>
+
+          <div class="signature-actions">
+            <button type="button" class="btn-secondary" id="clearReviewSignatureBtn">Hapus Tanda Tangan</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-footer-note">
+        Pastikan seluruh data sudah benar. Jika ada kesalahan, klik tombol <strong>Edit</strong>.
+      </div>
+
+      <div class="form-actions review-actions-formal">
+        <a href="index.html" class="btn-secondary btn-link">Edit</a>
+        <a href="tata-tertib.html" class="btn-link btn-primary-link" id="btnSudahBenarUnit">Sudah Benar</a>
+        <button type="button" class="btn-primary-link review-submit-btn" id="btnSubmitTeknikal" style="display: none;">Submit</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/pelatihan-options.js"></script>
+<script type="module" src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/review.js"></script>
+</body>
+</html>

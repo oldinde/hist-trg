@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tata Tertib Peserta Pelatihan</title>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/peserta.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="tt-section">
+      <div class="tt-title">
+        <img src="assets/img/logo-perusahaan.png" alt="Logo Perusahaan" class="logo" />
+        <h1>TATA TERTIB PESERTA PELATIHAN</h1>
+        <p>Silakan baca dokumen berikut, lalu centang persetujuan dan tanda tangani pada area yang disediakan.</p>
+      </div>
+
+      <div class="tt-viewer">
+        <iframe src="assets/pdf/tata-tertib.pdf"></iframe>
+      </div>
+
+      <div class="agreement-box">
+        <label class="checkbox-inline">
+          <input type="checkbox" id="setujuCheckbox" />
+          <span>Saya telah membaca dan menyetujui tata tertib pelatihan.</span>
+        </label>
+      </div>
+
+      <div class="signature-box">
+        <label for="signatureCanvas"><strong>Tanda Tangan Peserta</strong></label>
+        <canvas id="signatureCanvas" class="signature-pad"></canvas>
+
+        <div class="signature-actions">
+          <button type="button" class="btn-secondary" id="clearSignatureBtn">Hapus Tanda Tangan</button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="review.html" class="btn-secondary btn-link">Kembali</a>
+        <button type="button" id="finalSubmitBtn">Final Submit</button>
+      </div>
+    </section>
+  </main>
+
+<script type="module" src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/tata-tertib.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form Data Diri Peserta Pelatihan</title>
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/peserta.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="form-section">
+      <header class="page-header">
+        <img src="assets/img/logo-perusahaan.png" alt="Logo Perusahaan" class="logo" />
+        <h1>FORM DATA DIRI PESERTA PELATIHAN</h1>
+        <p>Silakan isi seluruh data dengan benar. Setelah selesai, Anda akan diminta memeriksa kembali data sebelum melanjutkan ke tata tertib.</p>
+      </header>
+
+      <form id="formPeserta" novalidate>
+        <div id="formAlert" class="form-alert" style="display: none;"></div>
+
+        <div id="formContent">
+          <div class="form-grid">
+            <div class="form-group full">
+              <h2>Data Pribadi</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="namaLengkap">Nama Lengkap</label>
+              <input type="text" id="namaLengkap" name="namaLengkap" />
+              <small class="error-text" id="error-namaLengkap"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="tempatLahir">Tempat Lahir</label>
+              <input type="text" id="tempatLahir" name="tempatLahir" />
+              <small class="error-text" id="error-tempatLahir"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="tanggalLahir">Tanggal Lahir</label>
+              <input type="date" id="tanggalLahir" name="tanggalLahir" />
+              <small class="error-text" id="error-tanggalLahir"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="agama">Agama</label>
+              <select id="agama" name="agama">
+                <option value="">PILIH AGAMA</option>
+                <option value="ISLAM">ISLAM</option>
+                <option value="KRISTEN PROTESTAN">KRISTEN PROTESTAN</option>
+                <option value="KATOLIK">KATOLIK</option>
+                <option value="HINDU">HINDU</option>
+                <option value="BUDHA">BUDHA</option>
+                <option value="KONGHUCU">KONGHUCU</option>
+              </select>
+              <small class="error-text" id="error-agama"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="nrp">NRP</label>
+              <input type="text" id="nrp" name="nrp" />
+              <small class="error-text" id="error-nrp"></small>
+            </div>
+
+            <div class="form-group full">
+              <label for="alamatTinggal">Alamat Tempat Tinggal</label>
+              <textarea id="alamatTinggal" name="alamatTinggal" rows="3"></textarea>
+              <small class="error-text" id="error-alamatTinggal"></small>
+            </div>
+
+            <div class="form-group full">
+              <h2>Data KTP</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="nik">NIK</label>
+              <input type="text" id="nik" name="nik" maxlength="16" />
+              <small class="error-text" id="error-nik"></small>
+            </div>
+
+            <div class="form-group full">
+              <label for="alamatKtp">Alamat Sesuai KTP</label>
+              <textarea id="alamatKtp" name="alamatKtp" rows="3"></textarea>
+              <small class="error-text" id="error-alamatKtp"></small>
+            </div>
+
+            <div class="form-group full">
+              <label for="fileKtp">Upload KTP</label>
+              <input type="file" id="fileKtp" name="fileKtp" accept=".pdf,.jpg,.jpeg,.png" />
+              <small class="error-text" id="error-fileKtp"></small>
+            </div>
+
+            <div class="form-group full">
+              <h2>Data Pekerjaan</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="golongan">Golongan</label>
+              <select id="golongan" name="golongan">
+                <option value="">PILIH GOLONGAN</option>
+                <option value="-">-</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+                <option value="21">21</option>
+              </select>
+              <small class="error-text" id="error-golongan"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="jabatan">Jabatan</label>
+              <select id="jabatan" name="jabatan">
+                <option value="">PILIH JABATAN</option>
+                <option value="OPERATOR MAGANG">OPERATOR MAGANG</option>
+                <option value="MEKANIK MAGANG">MEKANIK MAGANG</option>
+                <option value="OPERATOR">OPERATOR</option>
+                <option value="MEKANIK">MEKANIK</option>
+                <option value="DRIVER">DRIVER</option>
+                <option value="STAF/OFFICER/GL">STAF/OFFICER/GL</option>
+                <option value="LAINNYA">LAINNYA</option>
+              </select>
+              <small class="error-text" id="error-jabatan"></small>
+            </div>
+
+            <div class="form-group full" id="jabatanLainnyaWrapper">
+              <label for="jabatanLainnya">Jabatan Lainnya</label>
+              <input type="text" id="jabatanLainnya" name="jabatanLainnya" />
+              <small class="error-text" id="error-jabatanLainnya"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="departemen">Departemen</label>
+              <select id="departemen" name="departemen">
+                <option value="">PILIH DEPARTEMEN</option>
+                <option value="CMD">CMD</option>
+                <option value="DNB">DNB</option>
+                <option value="GS & CSR">GS & CSR</option>
+                <option value="HC">HC</option>
+                <option value="HRM">HRM</option>
+                <option value="OLD">OLD</option>
+                <option value="PCH">PCH</option>
+                <option value="PROD 1">PROD 1</option>
+                <option value="PROD 2">PROD 2</option>
+                <option value="PSV">PSV</option>
+                <option value="PTD">PTD</option>
+                <option value="PWD">PWD</option>
+                <option value="SHE HAULING">SHE HAULING</option>
+                <option value="SHE MINING">SHE MINING</option>
+                <option value="SM HAULING">SM HAULING</option>
+                <option value="SM MINING">SM MINING</option>
+                <option value="TYRE">TYRE</option>
+                <option value="LAINNYA">LAINNYA</option>
+              </select>
+              <small class="error-text" id="error-departemen"></small>
+            </div>
+
+            <div class="form-group full" id="departemenLainnyaWrapper">
+              <label for="departemenLainnya">Departemen Lainnya</label>
+              <input type="text" id="departemenLainnya" name="departemenLainnya" />
+              <small class="error-text" id="error-departemenLainnya"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="namaPerusahaanPilihan">Nama Perusahaan / Cabang</label>
+              <select id="namaPerusahaanPilihan" name="namaPerusahaanPilihan">
+                <option value="">PILIH PERUSAHAAN / CABANG</option>
+                <option value="PT. KALIMANTAN PRIMA PERSADA / INDE">PT. KALIMANTAN PRIMA PERSADA / INDE</option>
+                <option value="LAINNYA">LAINNYA</option>
+              </select>
+              <small class="error-text" id="error-namaPerusahaanPilihan"></small>
+            </div>
+
+            <div class="form-group full" id="namaPerusahaanLainnyaWrapper">
+              <label for="namaPerusahaanLainnya">Nama Perusahaan / Cabang Lainnya</label>
+              <input type="text" id="namaPerusahaanLainnya" name="namaPerusahaanLainnya" />
+              <small class="error-text" id="error-namaPerusahaanLainnya"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="tanggalMasukKerja">Tanggal Masuk Kerja</label>
+              <input type="date" id="tanggalMasukKerja" name="tanggalMasukKerja" />
+              <small class="error-text" id="error-tanggalMasukKerja"></small>
+            </div>
+
+            <div class="form-group full">
+              <label for="alamatPerusahaan">Alamat Perusahaan</label>
+              <textarea id="alamatPerusahaan" name="alamatPerusahaan" rows="2"></textarea>
+              <small class="error-text" id="error-alamatPerusahaan"></small>
+            </div>
+
+            <div class="form-group full">
+              <h2>Data Pendidikan</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="pendidikanTerakhir">Pendidikan Terakhir</label>
+              <select id="pendidikanTerakhir" name="pendidikanTerakhir">
+                <option value="">PILIH PENDIDIKAN</option>
+                <option value="SD">SD</option>
+                <option value="SMP">SMP</option>
+                <option value="SMA/K">SMA/K</option>
+                <option value="D3">D3</option>
+                <option value="S1">S1</option>
+              </select>
+              <small class="error-text" id="error-pendidikanTerakhir"></small>
+            </div>
+
+            <div class="form-group" id="jurusanWrapper">
+              <label for="jurusan">Jurusan</label>
+              <input type="text" id="jurusan" name="jurusan" />
+              <small class="error-text" id="error-jurusan"></small>
+            </div>
+
+            <div class="form-group full">
+              <h2>Data Pelatihan</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="kategoriPelatihan">Kategori Pelatihan</label>
+              <select id="kategoriPelatihan" name="kategoriPelatihan">
+                <option value="">PILIH KATEGORI PELATIHAN</option>
+                <option value="TRAINING UNIT">TRAINING UNIT</option>
+                <option value="TRAINING TEKNIKAL PENGAWAS/GL">TRAINING TEKNIKAL PENGAWAS/GL</option>
+              </select>
+              <small class="error-text" id="error-kategoriPelatihan"></small>
+            </div>
+
+            <div class="form-group" id="jenisPelatihanUnitWrapper">
+              <label for="jenisPelatihanUnit">Jenis Pelatihan</label>
+              <select id="jenisPelatihanUnit" name="jenisPelatihanUnit">
+                <option value="">PILIH JENIS PELATIHAN</option>
+                <option value="FRESH TRAINING">FRESH TRAINING</option>
+                <option value="SKILL UP EGI">SKILL UP EGI</option>
+                <option value="SKILL UP NON-EGI">SKILL UP NON-EGI</option>
+                <option value="REFRESH TRAINING">REFRESH TRAINING</option>
+                <option value="SIMILAR TRAINING">SIMILAR TRAINING</option>
+                <option value="NEW PRODUCT SERIES TRAINING">NEW PRODUCT SERIES TRAINING</option>
+                <option value="EXPERIENTIAL LEARNING">EXPERIENTIAL LEARNING</option>
+              </select>
+              <small class="error-text" id="error-jenisPelatihanUnit"></small>
+            </div>
+
+            <div class="form-group" id="jenisPelatihanTeknikalWrapper">
+              <label for="jenisPelatihanTeknikal">Jenis Pelatihan</label>
+              <select id="jenisPelatihanTeknikal" name="jenisPelatihanTeknikal">
+                <option value="">PILIH JENIS PELATIHAN</option>
+                <option value="BASIC">BASIC</option>
+                <option value="INTERMEDIATE">INTERMEDIATE</option>
+                <option value="ADVANCE">ADVANCE</option>
+              </select>
+              <small class="error-text" id="error-jenisPelatihanTeknikal"></small>
+            </div>
+
+            <div class="form-group" id="groupEgiWrapper">
+              <label for="groupEgi">Group EGI</label>
+              <select id="groupEgi" name="groupEgi">
+                <option value="">PILIH GROUP EGI</option>
+              </select>
+              <small class="error-text" id="error-groupEgi"></small>
+            </div>
+
+            <div class="form-group" id="kelasTeknikalWrapper">
+              <label for="kelasTeknikal">Kelas</label>
+              <select id="kelasTeknikal" name="kelasTeknikal">
+                <option value="">PILIH KELAS</option>
+                <option value="COAL OPERATION MANAGEMENT">COAL OPERATION MANAGEMENT</option>
+                <option value="COAL HAULING">COAL HAULING</option>
+                <option value="ROAD MAINTENANCE">ROAD MAINTENANCE</option>
+                <option value="DRILLING BLASTING">DRILLING BLASTING</option>
+                <option value="DRAINAGE & DEWATERING">DRAINAGE & DEWATERING</option>
+              </select>
+              <small class="error-text" id="error-kelasTeknikal"></small>
+            </div>
+
+            <div class="form-group full" id="unitTypeSectionWrapper">
+              <label>Unit Type</label>
+              <div id="unitTypeWrapper" class="checkbox-wrapper">
+                <p class="muted">PILIH GROUP EGI TERLEBIH DAHULU.</p>
+              </div>
+              <small class="error-text" id="error-unitType"></small>
+            </div>
+
+            <div class="form-group" id="waliKelasUnitWrapper">
+              <label for="waliKelasUnit">Wali Kelas / Pengajar</label>
+              <select id="waliKelasUnit" name="waliKelasUnit">
+                <option value="">PILIH WALI KELAS / PENGAJAR</option>
+              </select>
+              <small class="error-text" id="error-waliKelasUnit"></small>
+            </div>
+
+            <div class="form-group" id="waliKelasTeknikalWrapper">
+              <label for="waliKelasTeknikal">Wali Kelas</label>
+              <select id="waliKelasTeknikal" name="waliKelasTeknikal">
+                <option value="">PILIH WALI KELAS</option>
+              </select>
+              <small class="error-text" id="error-waliKelasTeknikal"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="periodeBulan">Periode Pelatihan - Bulan</label>
+              <select id="periodeBulan" name="periodeBulan">
+                <option value="">PILIH BULAN</option>
+                <option value="JANUARI">JANUARI</option>
+                <option value="FEBRUARI">FEBRUARI</option>
+                <option value="MARET">MARET</option>
+                <option value="APRIL">APRIL</option>
+                <option value="MEI">MEI</option>
+                <option value="JUNI">JUNI</option>
+                <option value="JULI">JULI</option>
+                <option value="AGUSTUS">AGUSTUS</option>
+                <option value="SEPTEMBER">SEPTEMBER</option>
+                <option value="OKTOBER">OKTOBER</option>
+                <option value="NOVEMBER">NOVEMBER</option>
+                <option value="DESEMBER">DESEMBER</option>
+              </select>
+              <small class="error-text" id="error-periodeBulan"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="periodeTahun">Periode Pelatihan - Tahun</label>
+              <input type="text" id="periodeTahun" name="periodeTahun" readonly />
+              <small class="error-text" id="error-periodeTahun"></small>
+            </div>
+
+            <div class="form-group full">
+              <label for="tempatPenyelenggaraan">Tempat Penyelenggaraan</label>
+              <input type="text" id="tempatPenyelenggaraan" name="tempatPenyelenggaraan" value="OPERATION LEARNING & DEVELOPMENT KPP INDE" readonly />
+            </div>
+
+            <div class="form-group full">
+              <h2>Riwayat Pelatihan Sebelumnya</h2>
+            </div>
+
+            <div class="form-group full">
+              <div id="riwayatPelatihanList" class="repeat-list"></div>
+              <button type="button" class="btn-secondary" id="tambahRiwayatBtn">
+                + Tambah Riwayat Pelatihan
+              </button>
+            </div>
+
+            <div class="form-group full">
+              <h2>Pengalaman Kerja</h2>
+            </div>
+
+            <div class="form-group full">
+              <div id="pengalamanKerjaList" class="repeat-list"></div>
+              <button type="button" class="btn-secondary" id="tambahPengalamanBtn">
+                + Tambah Pengalaman Kerja
+              </button>
+            </div>
+
+            <div class="form-group full">
+              <h2>Dokumen Izin Operasional</h2>
+            </div>
+
+            <div class="form-group full">
+              <label for="memilikiSimper">Memiliki SIMPER?</label>
+              <select id="memilikiSimper" name="memilikiSimper">
+                <option value="">PILIH</option>
+                <option value="YA">YA</option>
+                <option value="TIDAK MEMILIKI SIMPER">TIDAK MEMILIKI SIMPER</option>
+              </select>
+              <small class="error-text" id="error-memilikiSimper"></small>
+            </div>
+
+            <div class="form-group full" id="fileSimperWrapper">
+              <label for="fileSimper">Upload SIMPER</label>
+              <input type="file" id="fileSimper" name="fileSimper" accept=".pdf,.jpg,.jpeg,.png" />
+              <small class="error-text" id="error-fileSimper"></small>
+            </div>
+
+            <div class="form-group full" id="fileMinePermitWrapper">
+              <label for="fileMinePermit">Upload MINE PERMIT</label>
+              <input type="file" id="fileMinePermit" name="fileMinePermit" accept=".pdf,.jpg,.jpeg,.png" />
+              <small class="error-text" id="error-fileMinePermit"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit">Lanjut</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/validations.js"></script>
+  <script src="assets/js/pelatihan-options.js"></script>
+  <script type="module" src="assets/js/supabase-client.js"></script>
+  <script src="assets/js/peserta-form.js"></script>
+</body>
+</html>

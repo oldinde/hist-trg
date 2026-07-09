@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test Upload Storage Supabase</title>
+</head>
+<body>
+  <h1>Test Upload Storage Supabase</h1>
+
+  <div style="margin-bottom:16px;">
+    <label for="ktpFile">Pilih file KTP:</label><br />
+    <input type="file" id="ktpFile" accept=".pdf,.jpg,.jpeg,.png" />
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <label for="simperFile">Pilih file SIMPER:</label><br />
+    <input type="file" id="simperFile" accept=".pdf,.jpg,.jpeg,.png" />
+  </div>
+
+  <button id="uploadBtn">Tes Upload Storage</button>
+
+  <pre id="result">Halaman siap. Pilih file lalu klik "Tes Upload Storage".</pre>
+
+  <script type="module">
+    import { supabase } from './assets/js/supabase-client.js';
+
+    const ktpFileInput = document.getElementById('ktpFile');
+    const simperFileInput = document.getElementById('simperFile');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const result = document.getElementById('result');
+
+    function sanitizeFileName(name = '') {
+      return name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9.\-_]/g, '');
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      result.textContent = 'Sedang upload file ke storage...';
+
+      const ktpFile = ktpFileInput.files[0];
+      const simperFile = simperFileInput.files[0];
+
+      if (!ktpFile) {
+        result.textContent = 'ERROR:\nFile KTP wajib dipilih.';
+        return;
+      }
+
+      if (!simperFile) {
+        result.textContent = 'ERROR:\nFile SIMPER wajib dipilih.';
+        return;
+      }
+
+      try {
+        const now = new Date();
+        const folderCode = `test-${now.getTime()}`;
+
+        const ktpPath = `${folderCode}/ktp-${sanitizeFileName(ktpFile.name)}`;
+        const simperPath = `${folderCode}/simper-${sanitizeFileName(simperFile.name)}`;
+
+        const { data: ktpData, error: ktpError } = await supabase.storage
+          .from('ktp')
+          .upload(ktpPath, ktpFile, {
+            upsert: false,
+            contentType: ktpFile.type
+          });
+
+        if (ktpError) {
+          result.textContent = 'ERROR UPLOAD KTP:\n' + JSON.stringify(ktpError, null, 2);
+          return;
+        }
+
+        const { data: simperData, error: simperError } = await supabase.storage
+          .from('simper')
+          .upload(simperPath, simperFile, {
+            upsert: false,
+            contentType: simperFile.type
+          });
+
+        if (simperError) {
+          result.textContent = 'ERROR UPLOAD SIMPER:\n' + JSON.stringify(simperError, null, 2);
+          return;
+        }
+
+        result.textContent =
+          'UPLOAD STORAGE BERHASIL\n\n' +
+          'KTP:\n' + JSON.stringify(ktpData, null, 2) +
+          '\n\nSIMPER:\n' + JSON.stringify(simperData, null, 2) +
+          '\n\nPath KTP:\n' + ktpPath +
+          '\n\nPath SIMPER:\n' + simperPath;
+      } catch (err) {
+        result.textContent = 'ERROR JS:\n' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

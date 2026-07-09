@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>End-to-End Test Supabase</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    pre { background:#0b1020; color:#e5e7eb; padding: 12px; white-space: pre-wrap; }
+    input, select { margin: 6px 0; width: 320px; }
+    .row { margin-bottom: 10px; }
+    button { padding: 10px 14px; margin-right: 10px; }
+    .muted { color: #6b7280; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>End-to-End Test Supabase (1 halaman)</h1>
+
+  <div class="row">
+    <label>File KTP (pilih salah satu):</label><br/>
+    <input type="file" id="ktpFile" accept=".pdf,.jpg,.jpeg,.png" />
+  </div>
+
+  <div class="row">
+    <label>File SIMPER (pilih salah satu):</label><br/>
+    <input type="file" id="simperFile" accept=".pdf,.jpg,.jpeg,.png" />
+  </div>
+
+  <div class="row">
+    <label>Signature (canvas):</label><br/>
+    <canvas id="sigCanvas" style="border:1px dashed #9ca3af; border-radius:10px; width: 600px; height: 220px; background:#fff;"></canvas>
+    <div class="muted">Gambar pakai mouse/touch</div>
+  </div>
+
+  <div class="row">
+    <button id="runBtn">RUN (Insert + Upload + Signature)</button>
+    <button id="clearSigBtn" type="button">Clear Signature</button>
+  </div>
+
+  <pre id="result">Siap.</pre>
+
+  <script type="module">
+    import { supabase } from './assets/js/supabase-client.js';
+
+    const runBtn = document.getElementById('runBtn');
+    const clearSigBtn = document.getElementById('clearSigBtn');
+    const result = document.getElementById('result');
+
+    const ktpFile = document.getElementById('ktpFile');
+    const simperFile = document.getElementById('simperFile');
+    const canvas = document.getElementById('sigCanvas');
+
+    function setResult(msg) { result.textContent = msg; }
+    function sanitizeFileName(name='') {
+      return name.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9.\-_]/g, '');
+    }
+
+    // --- signature canvas ---
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function resizeCanvas() {
+      const dpr = Math.max(window.devicePixelRatio || 1, 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // kalau ada gambar sebelumnya, tidak restore untuk test ini
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function getPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (evt.clientX - rect.left);
+      const y = (evt.clientY - rect.top);
+      return { x, y };
+    }
+
+    canvas.addEventListener('mousedown', (e)=>{ drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+    canvas.addEventListener('mousemove', (e)=>{ if(!drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
+    window.addEventListener('mouseup', ()=>{ drawing=false; });
+
+    canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); drawing=true; const t=e.touches[0]; const rect=canvas.getBoundingClientRect(); const x=t.clientX-rect.left; const y=t.clientY-rect.top; ctx.beginPath(); ctx.moveTo(x,y); });
+    canvas.addEventListener('touchmove', (e)=>{ e.preventDefault(); if(!drawing) return; const t=e.touches[0]; const rect=canvas.getBoundingClientRect(); const x=t.clientX-rect.left; const y=t.clientY-rect.top; ctx.lineTo(x,y); ctx.stroke(); });
+    canvas.addEventListener('touchend', ()=>{ drawing=false; });
+
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#111827';
+
+    clearSigBtn.addEventListener('click', ()=>{
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      setResult('Signature cleared. Tekan RUN lagi.');
+    });
+
+    function signatureDataUrl() {
+      // kosong kemungkinan putih; untuk test biarkan saja
+      return canvas.toDataURL('image/png');
+    }
+
+    function nowStamp() {
+      const n = new Date();
+      return n.getFullYear() +
+        String(n.getMonth()+1).padStart(2,'0') +
+        String(n.getDate()).padStart(2,'0') +
+        String(n.getHours()).padStart(2,'0') +
+        String(n.getMinutes()).padStart(2,'0') +
+        String(n.getSeconds()).padStart(2,'0');
+    }
+
+    async function uploadToBucket(bucket, path, file) {
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, {
+          upsert: false,
+          contentType: file.type
+        });
+      if (error) throw error;
+      return path;
+    }
+
+    runBtn.addEventListener('click', async ()=>{
+      setResult('RUN dimulai...');
+
+      try {
+        // 0) basic validation
+        const ktp = ktpFile.files?.[0];
+        const simper = simperFile.files?.[0];
+        if (!ktp) throw new Error('Pilih file KTP dulu.');
+        if (!simper) throw new Error('Pilih file SIMPER dulu.');
+
+        // 1) create a unique code + submission folder
+        const submissionCode = 'TEST' + nowStamp();
+        const folder = submissionCode;
+
+        // 2) upload files
+        setResult('Upload KTP ke bucket ktp...');
+        const ktpPath = `${folder}/ktp-${sanitizeFileName(ktp.name)}`;
+        await uploadToBucket('ktp', ktpPath, ktp);
+
+        setResult('Upload SIMPER ke bucket simper...');
+        const simperPath = `${folder}/simper-${sanitizeFileName(simper.name)}`;
+        await uploadToBucket('simper', simperPath, simper);
+
+        // 3) insert peserta
+        setResult('Insert peserta...');
+        const pesertaPayload = {
+          nama_lengkap: 'TEST END TO END',
+          tempat_lahir: 'TEST',
+          tanggal_lahir: '2000-01-01',
+          agama: 'ISLAM',
+          nrp: submissionCode,
+          nik: '1234567890123456',
+          alamat_tempat_tinggal: 'ALAMAT TEST',
+          alamat_sesuai_ktp: 'ALAMAT KTP TEST',
+          golongan: '16',
+          jabatan: 'STAF/OFFICER/GL',
+          jabatan_lainnya: null,
+          departemen: 'HC',
+          departemen_lainnya: null,
+          nama_perusahaan_pilihan: 'PT. KALIMANTAN PRIMA PERSADA / INDE',
+          nama_perusahaan_lainnya: null,
+          nama_perusahaan_final: 'PT. KALIMANTAN PRIMA PERSADA / INDE',
+          alamat_perusahaan: 'PENGADAN, KUTAI TIMUR',
+          tanggal_masuk_kerja: '2024-01-01',
+          pendidikan_terakhir: 'S1',
+          jurusan: 'TEKNIK INFORMATIKA'
+        };
+
+        const { data: pesertaData, error: pesertaError } = await supabase
+          .from('peserta')
+          .insert(pesertaPayload)
+          .select()
+          .single();
+        if (pesertaError) throw pesertaError;
+
+        // 4) insert training_submissions
+        setResult('Insert training_submissions...');
+        const sigUrl = signatureDataUrl();
+
+        const subPayload = {
+          peserta_id: pesertaData.id,
+          kategori_pelatihan: 'TRAINING UNIT',
+          jenis_pelatihan_unit: 'SKILL UP NON-EGI',
+          jenis_pelatihan_teknikal: null,
+          group_egi: 'GD',
+          kelas_teknikal: null,
+          wali_kelas_unit: null,
+          wali_kelas_teknikal: null,
+          periode_bulan: 'JULI',
+          periode_tahun: '2026',
+          tempat_penyelenggaraan: 'OPERATION LEARNING & DEVELOPMENT KPP INDE',
+          memiliki_simper: 'YA',
+
+          file_ktp_name: ktp.name,
+          file_ktp_path: ktpPath,
+
+          file_simper_name: simper.name,
+          file_simper_path: simperPath,
+
+          file_mine_permit_name: null,
+          file_mine_permit_path: null,
+
+          signature_data_url: sigUrl,
+          review_signature_data_url: null,
+
+          agreed_to_rules: false,
+          review_data_confirmed: true,
+          final_submitted_at: new Date().toISOString()
+        };
+
+        const { data: subData, error: subError } = await supabase
+          .from('training_submissions')
+          .insert(subPayload)
+          .select()
+          .single();
+        if (subError) throw subError;
+
+        // 5) insert child tables
+        setResult('Insert child tables (unit types, riwayat, pengalaman)...');
+
+        const unitTypesRows = [
+          { training_submission_id: subData.id, unit_type: 'GD825' },
+          { training_submission_id: subData.id, unit_type: 'CAT 14M3' }
+        ];
+
+        const { error: utErr } = await supabase
+          .from('training_unit_types')
+          .insert(unitTypesRows);
+        if (utErr) throw utErr;
+
+        const riwayatRows = [
+          {
+            training_submission_id: subData.id,
+            nama_pelatihan: 'BASIC SAFETY',
+            lembaga_pelatihan: 'KPP TRAINING CENTER',
+            bulan: 'JANUARI',
+            tahun: '2025'
+          }
+        ];
+
+        const { error: rErr } = await supabase
+          .from('riwayat_pelatihan')
+          .insert(riwayatRows);
+        if (rErr) throw rErr;
+
+        const pengalamanRows = [
+          {
+            training_submission_id: subData.id,
+            perusahaan: 'PT TEST',
+            jabatan: 'OPERATOR',
+            tahun_mulai: '2022',
+            tahun_selesai: '2024',
+            keterangan: 'PENGALAMAN TEST'
+          }
+        ];
+
+        const { error: pErr } = await supabase
+          .from('pengalaman_kerja')
+          .insert(pengalamanRows);
+        if (pErr) throw pErr;
+
+        setResult(
+          'SUCCESS END TO END ✅\n\n' +
+          JSON.stringify({ pesertaData, subData }, null, 2)
+        );
+      } catch (err) {
+        setResult('ERROR:\n' + (err?.message ? err.message : JSON.stringify(err, null, 2)));
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
