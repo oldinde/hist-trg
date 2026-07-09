@@ -3,123 +3,201 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Login</title>
+  <title>Login Admin - Historical Training</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f4f6f8;
+      background: #f3f4f6;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
+      color: #111827;
     }
 
-    .login-box {
-      background: white;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    .login-card {
       width: 100%;
-      max-width: 360px;
+      max-width: 420px;
+      background: white;
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
 
-    h1 {
-      margin-top: 0;
-      margin-bottom: 24px;
-      font-size: 24px;
+    .login-card h1 {
+      margin: 0 0 8px 0;
+      font-size: 26px;
       text-align: center;
+    }
+
+    .login-card p {
+      margin: 0 0 24px 0;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
     }
 
     .form-group {
       margin-bottom: 16px;
     }
 
-    label {
+    .form-group label {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-size: 14px;
       font-weight: bold;
+      color: #374151;
     }
 
-    input {
+    .form-group input {
       width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
+      padding: 12px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
       font-size: 14px;
+      outline: none;
     }
 
-    button {
+    .form-group input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .login-btn {
       width: 100%;
-      padding: 12px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
+      padding: 12px 16px;
       background: #2563eb;
       color: white;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold;
       cursor: pointer;
     }
 
-    button:hover {
+    .login-btn:hover {
       background: #1d4ed8;
     }
 
-    #loginError {
-      margin-top: 12px;
-      color: #dc2626;
+    .login-btn:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 14px;
       font-size: 14px;
-      display: none;
       text-align: center;
+      color: #6b7280;
+      min-height: 20px;
+    }
+
+    .message.error {
+      color: #dc2626;
+    }
+
+    .message.success {
+      color: #16a34a;
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h1>Admin Login</h1>
+  <div class="login-card">
+    <h1>Login Admin</h1>
+    <p>Masuk menggunakan username dan password admin</p>
 
-    <form id="adminLoginForm">
+    <form id="loginForm">
       <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" placeholder="Masukkan username" required />
+        <label for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" placeholder="Masukkan username..." autocomplete="username" />
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="Masukkan password" required />
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" placeholder="Masukkan password..." autocomplete="current-password" />
       </div>
 
-      <button type="submit">Login</button>
+      <button type="submit" id="loginBtn" class="login-btn">Login</button>
     </form>
 
-    <p id="loginError"></p>
+    <div id="loginMessage" class="message"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config/supabase.js"></script>
+  <script src="config/admin-auth.js"></script>
+
   <script>
-    const ADMIN_USERNAME = "admin";
-    const ADMIN_PASSWORD = "123456";
+    const loginForm = document.getElementById("loginForm");
+    const usernameInput = document.getElementById("usernameInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginMessage = document.getElementById("loginMessage");
 
-    const form = document.getElementById("adminLoginForm");
-    const usernameInput = document.getElementById("username");
-    const passwordInput = document.getElementById("password");
-    const errorEl = document.getElementById("loginError");
+    async function redirectIfAlreadyLoggedIn() {
+      const { data, error } = await window.sb.auth.getSession();
 
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
+      if (!error && data.session) {
+        window.location.href = "admin-dashboard.html";
+      }
+    }
 
-      const username = usernameInput.value.trim();
+    loginForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const username = usernameInput.value.trim().toLowerCase();
       const password = passwordInput.value;
 
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        localStorage.setItem("adminLoggedIn", "true");
+      loginMessage.textContent = "";
+      loginMessage.className = "message";
+
+      if (!username || !password) {
+        loginMessage.textContent = "Username dan password wajib diisi.";
+        loginMessage.className = "message error";
+        return;
+      }
+
+      const email = getAdminEmailFromUsername(username);
+
+      if (!email) {
+        loginMessage.textContent = "Username admin tidak ditemukan.";
+        loginMessage.className = "message error";
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginMessage.textContent = "Memproses login...";
+      loginMessage.className = "message";
+
+      try {
+        const { error } = await window.sb.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        loginMessage.textContent = "Login berhasil. Mengalihkan...";
+        loginMessage.className = "message success";
+
         window.location.href = "admin-dashboard.html";
-      } else {
-        errorEl.textContent = "Username atau password salah.";
-        errorEl.style.display = "block";
+      } catch (err) {
+        console.error("ADMIN LOGIN ERROR:", err);
+        loginMessage.textContent = "Username atau password salah.";
+        loginMessage.className = "message error";
+      } finally {
+        loginBtn.disabled = false;
       }
     });
+
+    redirectIfAlreadyLoggedIn();
   </script>
 </body>
 </html>
