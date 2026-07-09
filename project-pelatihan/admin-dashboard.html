@@ -222,32 +222,12 @@
             <th>Aksi</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>123456</td>
-            <td>Budi Santoso</td>
-            <td>G8</td>
-            <td>2026-07-09</td>
-            <td><span class="badge">Submitted</span></td>
-            <td><a href="admin-detail.html" class="action-link">Lihat Detail</a></td>
-          </tr>
-          <tr>
-            <td>789012</td>
-            <td>Siti Aminah</td>
-            <td>PJO</td>
-            <td>2026-07-08</td>
-            <td><span class="badge">Submitted</span></td>
-            <td><a href="admin-detail.html" class="action-link">Lihat Detail</a></td>
-          </tr>
-          <tr>
-            <td>345678</td>
-            <td>Rian Pratama</td>
-            <td>AK3U</td>
-            <td>2026-07-08</td>
-            <td><span class="badge">Submitted</span></td>
-            <td><a href="admin-detail.html" class="action-link">Lihat Detail</a></td>
-          </tr>
-        </tbody>
+        <tbody id="latestSubmissionsBody">
+  <tr>
+    <td colspan="6">Memuat data...</td>
+  </tr>
+</tbody>
+
       </table>
     </div>
   </div>
@@ -265,18 +245,91 @@
   const logoutBtn = document.getElementById("logoutBtn");
   const searchBtn = document.getElementById("searchBtn");
   const nrpSearchInput = document.getElementById("nrpSearchInput");
-    nrpSearchInput.addEventListener("input", function () {
+  nrpSearchInput.addEventListener("input", function () {
   let value = nrpSearchInput.value.toUpperCase();
   value = value.replace(/\s+/g, "");
   nrpSearchInput.value = value;
 });
   const searchMessage = document.getElementById("searchMessage");
   const searchResult = document.getElementById("searchResult");
+  const latestSubmissionsBody = document.getElementById("latestSubmissionsBody");
+
 
   logoutBtn.addEventListener("click", function () {
     localStorage.removeItem("adminLoggedIn");
     window.location.href = "admin-login.html";
   });
+
+  async function loadLatestSubmissions() {
+  latestSubmissionsBody.innerHTML = `
+    <tr>
+      <td colspan="6">Memuat data...</td>
+    </tr>
+  `;
+
+  try {
+    const { data, error } = await window.sb
+      .from("training_submissions")
+      .select(`
+        id,
+        kategori_pelatihan,
+        jenis_pelatihan_unit,
+        jenis_pelatihan_teknikal,
+        final_submitted_at,
+        created_at,
+        peserta (
+          nrp,
+          nama_lengkap
+        )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      latestSubmissionsBody.innerHTML = `
+        <tr>
+          <td colspan="6">Belum ada submission.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    const rowsHtml = data.map(item => {
+      const peserta = Array.isArray(item.peserta) ? item.peserta[0] : item.peserta;
+      const namaTraining =
+        item.jenis_pelatihan_unit ||
+        item.jenis_pelatihan_teknikal ||
+        item.kategori_pelatihan ||
+        "-";
+
+      const tanggal = item.final_submitted_at || item.created_at;
+
+      return `
+        <tr>
+          <td>${peserta?.nrp ?? "-"}</td>
+          <td>${peserta?.nama_lengkap ?? "-"}</td>
+          <td>${namaTraining}</td>
+          <td>${tanggal ? new Date(tanggal).toLocaleDateString("id-ID") : "-"}</td>
+          <td><span class="badge">Submitted</span></td>
+          <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
+        </tr>
+      `;
+    }).join("");
+
+    latestSubmissionsBody.innerHTML = rowsHtml;
+  } catch (err) {
+    console.error("LOAD LATEST SUBMISSIONS ERROR:", err);
+    latestSubmissionsBody.innerHTML = `
+      <tr>
+        <td colspan="6">Gagal memuat data submission terbaru.</td>
+      </tr>
+    `;
+  }
+}
 
   searchBtn.addEventListener("click", async function () {
     const nrp = nrpSearchInput.value.toUpperCase().replace(/\s+/g, "");
