@@ -246,13 +246,14 @@
     </div>
 
     <div class="filter-card">
-      <div class="section-title">Filter Periode Final Submitted</div>
+      <div class="section-title">Filter Dashboard</div>
 
       <div class="search-row">
         <select id="startMonth"></select>
         <select id="startYear"></select>
         <select id="endMonth"></select>
         <select id="endYear"></select>
+        <select id="progressFilter"></select>
         <button id="applyFilterBtn" type="button">Terapkan Filter</button>
         <button id="resetFilterBtn" type="button" class="reset-btn">Reset</button>
       </div>
@@ -326,6 +327,7 @@
     const startYearEl = document.getElementById("startYear");
     const endMonthEl = document.getElementById("endMonth");
     const endYearEl = document.getElementById("endYear");
+    const progressFilterEl = document.getElementById("progressFilter");
     const applyFilterBtn = document.getElementById("applyFilterBtn");
     const resetFilterBtn = document.getElementById("resetFilterBtn");
     const filterInfo = document.getElementById("filterInfo");
@@ -346,18 +348,18 @@
     ];
 
     const PROGRESS_OPTIONS = [
-  { value: "in class", label: "In Class" },
-  { value: "gerdas", label: "Gerdas" },
-  { value: "in field", label: "In Field" },
-  { value: "ojt", label: "OJT" },
-  { value: "praktek", label: "Praktek" },
-  { value: "selesai", label: "Selesai" }
-];
-
+      { value: "in class", label: "In Class" },
+      { value: "gerdas", label: "Gerdas" },
+      { value: "in field", label: "In Field" },
+      { value: "ojt", label: "OJT" },
+      { value: "praktek", label: "Praktek" },
+      { value: "selesai", label: "Selesai" }
+    ];
 
     let currentFilter = {
       startDate: null,
-      endDate: null
+      endDate: null,
+      progress: ""
     };
 
     nrpSearchInput.addEventListener("input", function () {
@@ -395,6 +397,11 @@
         .replace(/'/g, "&#039;");
     }
 
+    function formatProgressLabel(value) {
+      const found = PROGRESS_OPTIONS.find(item => item.value === value);
+      return found ? found.label : (value || "-");
+    }
+
     function populateMonthOptions() {
       const defaultOption = `<option value="">Pilih Bulan</option>`;
       const monthHtml = MONTH_OPTIONS.map(
@@ -417,6 +424,15 @@
 
       startYearEl.innerHTML = defaultOption + yearHtml;
       endYearEl.innerHTML = defaultOption + yearHtml;
+    }
+
+    function populateProgressFilterOptions() {
+      const optionsHtml = [
+        `<option value="">Semua Progress</option>`,
+        ...PROGRESS_OPTIONS.map(item => `<option value="${item.value}">${item.label}</option>`)
+      ].join("");
+
+      progressFilterEl.innerHTML = optionsHtml;
     }
 
     function getMonthLabel(monthValue) {
@@ -451,60 +467,74 @@
     }
 
     function updateFilterInfo() {
-      if (!currentFilter.startDate || !currentFilter.endDate) {
-        filterInfo.textContent = "Menampilkan semua data yang sudah final submit.";
-        filterInfo.style.color = "#6b7280";
-        return;
+      const infoParts = [];
+
+      if (currentFilter.startDate && currentFilter.endDate) {
+        const start = new Date(currentFilter.startDate);
+        const end = new Date(currentFilter.endDate);
+
+        const startMonth = String(start.getMonth() + 1).padStart(2, "0");
+        const endMonth = String(end.getMonth() + 1).padStart(2, "0");
+
+        infoParts.push(
+          `periode ${getMonthLabel(startMonth)} ${start.getFullYear()} sampai ${getMonthLabel(endMonth)} ${end.getFullYear()}`
+        );
+      } else {
+        infoParts.push("semua periode");
       }
 
-      const start = new Date(currentFilter.startDate);
-      const end = new Date(currentFilter.endDate);
+      if (currentFilter.progress) {
+        infoParts.push(`progress ${formatProgressLabel(currentFilter.progress)}`);
+      } else {
+        infoParts.push("semua progress");
+      }
 
-      const startMonth = String(start.getMonth() + 1).padStart(2, "0");
-      const endMonth = String(end.getMonth() + 1).padStart(2, "0");
-
-      filterInfo.textContent =
-        `Menampilkan data dari ${getMonthLabel(startMonth)} ${start.getFullYear()} sampai ${getMonthLabel(endMonth)} ${end.getFullYear()}.`;
+      filterInfo.textContent = `Menampilkan data final submit untuk ${infoParts.join(" dan ")}.`;
       filterInfo.style.color = "#6b7280";
     }
 
-    function applyFinalSubmittedFilter(query) {
+    function applyAllFilters(query) {
+      let filteredQuery = query.not("final_submitted_at", "is", null);
+
       if (currentFilter.startDate && currentFilter.endDate) {
-        return query
-          .not("final_submitted_at", "is", null)
+        filteredQuery = filteredQuery
           .gte("final_submitted_at", currentFilter.startDate)
           .lte("final_submitted_at", currentFilter.endDate);
       }
 
-      return query.not("final_submitted_at", "is", null);
+      if (currentFilter.progress) {
+        filteredQuery = filteredQuery.eq("current_progress_status", currentFilter.progress);
+      }
+
+      return filteredQuery;
     }
 
     function buildProgressSelect(submissionId, currentProgress, updatedAt) {
-  const optionsHtml = PROGRESS_OPTIONS.map(item => {
-    const selected = item.value === currentProgress ? "selected" : "";
-    return `<option value="${item.value}" ${selected}>${item.label}</option>`;
-  }).join("");
+      const optionsHtml = PROGRESS_OPTIONS.map(item => {
+        const selected = item.value === currentProgress ? "selected" : "";
+        return `<option value="${item.value}" ${selected}>${item.label}</option>`;
+      }).join("");
 
-  const note = updatedAt
-    ? `Update terakhir: ${formatDateTime(updatedAt)}`
-    : "Belum ada update progress";
+      const note = updatedAt
+        ? `Update terakhir: ${formatDateTime(updatedAt)}`
+        : "Belum ada update progress";
 
-  return `
-    <select class="progress-select" data-submission-id="${submissionId}">
-      <option value="">Pilih progress</option>
-      ${optionsHtml}
-    </select>
-    <span class="progress-note">${note}</span>
-  `;
-}
-    
+      return `
+        <select class="progress-select" data-submission-id="${submissionId}">
+          <option value="">Pilih progress</option>
+          ${optionsHtml}
+        </select>
+        <span class="progress-note">${note}</span>
+      `;
+    }
+
     async function loadSummaryStats() {
       try {
         let submissionCountQuery = window.sb
           .from("training_submissions")
           .select("*", { count: "exact", head: true });
 
-        submissionCountQuery = applyFinalSubmittedFilter(submissionCountQuery);
+        submissionCountQuery = applyAllFilters(submissionCountQuery);
 
         const { count: totalSubmission, error: submissionCountError } = await submissionCountQuery;
         if (submissionCountError) throw submissionCountError;
@@ -513,7 +543,7 @@
           .from("training_submissions")
           .select("peserta_id, kategori_pelatihan, jenis_pelatihan_unit, jenis_pelatihan_teknikal");
 
-        filteredSubmissionQuery = applyFinalSubmittedFilter(filteredSubmissionQuery);
+        filteredSubmissionQuery = applyAllFilters(filteredSubmissionQuery);
 
         const { data: filteredSubmissions, error: filteredSubmissionsError } = await filteredSubmissionQuery;
         if (filteredSubmissionsError) throw filteredSubmissionsError;
@@ -567,7 +597,7 @@
           .order("final_submitted_at", { ascending: false })
           .limit(10);
 
-        submissionsQuery = applyFinalSubmittedFilter(submissionsQuery);
+        submissionsQuery = applyAllFilters(submissionsQuery);
 
         const { data: submissions, error: submissionsError } = await submissionsQuery;
         if (submissionsError) throw submissionsError;
@@ -575,7 +605,7 @@
         if (!submissions || submissions.length === 0) {
           latestSubmissionsBody.innerHTML = `
             <tr>
-              <td colspan="7">Tidak ada submission pada periode ini.</td>
+              <td colspan="7">Tidak ada submission pada filter ini.</td>
             </tr>
           `;
           return;
@@ -704,6 +734,12 @@
         if (noteEl) {
           noteEl.textContent = `Update terakhir: ${formatDateTime(nowIso)}`;
         }
+
+        await refreshDashboardData();
+
+        if (nrpSearchInput.value.trim()) {
+          searchBtn.click();
+        }
       } catch (err) {
         console.error("UPDATE PROGRESS ERROR:", err);
         alert("Gagal mengubah progress.");
@@ -715,8 +751,19 @@
 
     applyFilterBtn.addEventListener("click", async function () {
       try {
-        currentFilter = buildFilterDates();
+        const dateFilter = buildFilterDates();
+
+        currentFilter = {
+          startDate: dateFilter.startDate,
+          endDate: dateFilter.endDate,
+          progress: progressFilterEl.value
+        };
+
         await refreshDashboardData();
+
+        if (nrpSearchInput.value.trim()) {
+          searchBtn.click();
+        }
       } catch (err) {
         filterInfo.textContent = err.message;
         filterInfo.style.color = "red";
@@ -728,8 +775,19 @@
       startYearEl.value = "";
       endMonthEl.value = "";
       endYearEl.value = "";
-      currentFilter = { startDate: null, endDate: null };
+      progressFilterEl.value = "";
+
+      currentFilter = {
+        startDate: null,
+        endDate: null,
+        progress: ""
+      };
+
       await refreshDashboardData();
+
+      if (nrpSearchInput.value.trim()) {
+        searchBtn.click();
+      }
     });
 
     searchBtn.addEventListener("click", async function () {
@@ -781,13 +839,13 @@
           .eq("peserta_id", peserta.id)
           .order("final_submitted_at", { ascending: false });
 
-        submissionsQuery = applyFinalSubmittedFilter(submissionsQuery);
+        submissionsQuery = applyAllFilters(submissionsQuery);
 
         const { data: submissions, error: submissionsError } = await submissionsQuery;
         if (submissionsError) throw submissionsError;
 
         if (!submissions || submissions.length === 0) {
-          searchMessage.textContent = "Peserta ditemukan, tetapi tidak memiliki submission pada periode ini.";
+          searchMessage.textContent = "Peserta ditemukan, tetapi tidak memiliki submission pada filter ini.";
           searchMessage.style.color = "#b45309";
 
           searchResult.innerHTML = `
@@ -805,7 +863,7 @@
                   <tr>
                     <td>${escapeHtml(peserta.nrp ?? "-")}</td>
                     <td>${escapeHtml(peserta.nama_lengkap ?? "-")}</td>
-                    <td>Tidak ada submission pada periode ini</td>
+                    <td>Tidak ada submission pada filter ini</td>
                   </tr>
                 </tbody>
               </table>
@@ -884,6 +942,7 @@
 
     populateMonthOptions();
     populateYearOptions();
+    populateProgressFilterOptions();
     refreshDashboardData();
   </script>
 </body>
