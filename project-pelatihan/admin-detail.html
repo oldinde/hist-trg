@@ -269,20 +269,20 @@
     function getTrainingDisplay(submission) {
       if (isTrainingUnit(submission)) {
         const training = submission.jenis_pelatihan_unit || "-";
-        const typeUnit = submission.group_egi || "-";
-        return typeUnit && typeUnit !== "-" ? `${training} ${typeUnit}` : training;
+        const unitType = submission.unit_type || "-";
+        return unitType && unitType !== "-" ? `${training} ${unitType}` : training;
       }
 
       if (isTeknikalPengawasGL(submission)) {
         const training = submission.jenis_pelatihan_teknikal || "-";
         const kelas = submission.kelas_teknikal || "-";
-        return kelas && kelas !== "-" ? `${training} - ${kelas}` : training;
+        return kelas && kelas !== "-" ? `${training} ${kelas}` : training;
       }
 
       if (submission.jenis_pelatihan_teknikal) {
         const training = submission.jenis_pelatihan_teknikal || "-";
         const kelas = submission.kelas_teknikal || "-";
-        return kelas && kelas !== "-" ? `${training} - ${kelas}` : training;
+        return kelas && kelas !== "-" ? `${training} ${kelas}` : training;
       }
 
       return submission.kategori_pelatihan || "-";
@@ -390,8 +390,8 @@
             peserta_id,
             kategori_pelatihan,
             jenis_pelatihan_unit,
+            unit_type,
             jenis_pelatihan_teknikal,
-            group_egi,
             kelas_teknikal,
             current_progress_status,
             wali_kelas_unit,
