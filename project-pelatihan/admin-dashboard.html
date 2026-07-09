@@ -289,7 +289,7 @@
 
     try {
       // 1. Cari peserta berdasarkan NRP
-      const { data: pesertaData, error: pesertaError } = await supabase
+      const { data: pesertaData, error: pesertaError } = await window.sb
         .from("peserta")
         .select("id, nrp, nama_lengkap")
         .eq("nrp", nrp)
@@ -308,7 +308,7 @@
       const peserta = pesertaData[0];
 
       // 2. Cari submission milik peserta tersebut
-      const { data: submissions, error: submissionsError } = await supabase
+      const { data: submissions, error: submissionsError } = await window.sb
         .from("training_submissions")
         .select(`
           id,
