@@ -184,6 +184,22 @@
       text-decoration: underline;
     }
 
+    .progress-select {
+      min-width: 130px;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      background: white;
+    }
+
+    .progress-note {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -273,11 +289,12 @@
             <th>Tanggal</th>
             <th>Status</th>
             <th>Aksi</th>
+            <th>Progress</th>
           </tr>
         </thead>
         <tbody id="latestSubmissionsBody">
           <tr>
-            <td colspan="6">Memuat data...</td>
+            <td colspan="7">Memuat data...</td>
           </tr>
         </tbody>
       </table>
@@ -328,6 +345,14 @@
       { value: "12", label: "Desember" }
     ];
 
+    const PROGRESS_OPTIONS = [
+      "in class",
+      "gerdas",
+      "in field",
+      "ojt",
+      "selesai"
+    ];
+
     let currentFilter = {
       startDate: null,
       endDate: null
@@ -351,6 +376,21 @@
         item.kategori_pelatihan ||
         "-"
       );
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      return new Date(value).toLocaleString("id-ID");
+    }
+
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return "";
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     function populateMonthOptions() {
@@ -437,6 +477,25 @@
       return query.not("final_submitted_at", "is", null);
     }
 
+    function buildProgressSelect(submissionId, currentProgress, updatedAt) {
+      const optionsHtml = PROGRESS_OPTIONS.map(status => {
+        const selected = status === currentProgress ? "selected" : "";
+        return `<option value="${status}" ${selected}>${status}</option>`;
+      }).join("");
+
+      const note = updatedAt
+        ? `Update terakhir: ${formatDateTime(updatedAt)}`
+        : "Belum ada update progress";
+
+      return `
+        <select class="progress-select" data-submission-id="${submissionId}">
+          <option value="">Pilih progress</option>
+          ${optionsHtml}
+        </select>
+        <span class="progress-note">${note}</span>
+      `;
+    }
+
     async function loadSummaryStats() {
       try {
         let submissionCountQuery = window.sb
@@ -485,7 +544,7 @@
     async function loadLatestSubmissions() {
       latestSubmissionsBody.innerHTML = `
         <tr>
-          <td colspan="6">Memuat data...</td>
+          <td colspan="7">Memuat data...</td>
         </tr>
       `;
 
@@ -499,7 +558,9 @@
             jenis_pelatihan_unit,
             jenis_pelatihan_teknikal,
             final_submitted_at,
-            created_at
+            created_at,
+            current_progress_status,
+            current_progress_updated_at
           `)
           .order("final_submitted_at", { ascending: false })
           .limit(10);
@@ -512,7 +573,7 @@
         if (!submissions || submissions.length === 0) {
           latestSubmissionsBody.innerHTML = `
             <tr>
-              <td colspan="6">Tidak ada submission pada periode ini.</td>
+              <td colspan="7">Tidak ada submission pada periode ini.</td>
             </tr>
           `;
           return;
@@ -536,15 +597,21 @@
           const peserta = pesertaMap[item.peserta_id];
           const namaTraining = getTrainingName(item);
           const tanggal = item.final_submitted_at || item.created_at;
+          const progressHtml = buildProgressSelect(
+            item.id,
+            item.current_progress_status || "",
+            item.current_progress_updated_at
+          );
 
           return `
             <tr>
-              <td>${peserta?.nrp ?? "-"}</td>
-              <td>${peserta?.nama_lengkap ?? "-"}</td>
-              <td>${namaTraining}</td>
-              <td>${tanggal ? new Date(tanggal).toLocaleString("id-ID") : "-"}</td>
+              <td>${escapeHtml(peserta?.nrp ?? "-")}</td>
+              <td>${escapeHtml(peserta?.nama_lengkap ?? "-")}</td>
+              <td>${escapeHtml(namaTraining)}</td>
+              <td>${formatDateTime(tanggal)}</td>
               <td><span class="badge">Submitted</span></td>
               <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
+              <td>${progressHtml}</td>
             </tr>
           `;
         }).join("");
@@ -554,7 +621,7 @@
         console.error("LOAD LATEST SUBMISSIONS ERROR:", err);
         latestSubmissionsBody.innerHTML = `
           <tr>
-            <td colspan="6">Gagal memuat data submission terbaru.</td>
+            <td colspan="7">Gagal memuat data submission terbaru.</td>
           </tr>
         `;
       }
@@ -564,6 +631,84 @@
       updateFilterInfo();
       await loadSummaryStats();
       await loadLatestSubmissions();
+    }
+
+    async function updateSubmissionProgress(submissionId, newStatus, selectElement) {
+      if (!submissionId || !newStatus) return;
+
+      const previousValue = selectElement.getAttribute("data-prev-value") || "";
+      selectElement.disabled = true;
+
+      try {
+        const nowIso = new Date().toISOString();
+
+        const { data: activeHistory, error: activeHistoryError } = await window.sb
+          .from("training_progress_history")
+          .select("id, status, started_at, ended_at")
+          .eq("training_submission_id", submissionId)
+          .is("ended_at", null)
+          .order("started_at", { ascending: false })
+          .limit(1);
+
+        if (activeHistoryError) {
+          throw activeHistoryError;
+        }
+
+        const currentActive = activeHistory && activeHistory.length > 0 ? activeHistory[0] : null;
+
+        if (currentActive && currentActive.status === newStatus) {
+          selectElement.disabled = false;
+          return;
+        }
+
+        if (currentActive) {
+          const { error: closeHistoryError } = await window.sb
+            .from("training_progress_history")
+            .update({ ended_at: nowIso })
+            .eq("id", currentActive.id);
+
+          if (closeHistoryError) {
+            throw closeHistoryError;
+          }
+        }
+
+        const { error: insertHistoryError } = await window.sb
+          .from("training_progress_history")
+          .insert({
+            training_submission_id: submissionId,
+            status: newStatus,
+            started_at: nowIso
+          });
+
+        if (insertHistoryError) {
+          throw insertHistoryError;
+        }
+
+        const { error: submissionUpdateError } = await window.sb
+          .from("training_submissions")
+          .update({
+            current_progress_status: newStatus,
+            current_progress_updated_at: nowIso
+          })
+          .eq("id", submissionId);
+
+        if (submissionUpdateError) {
+          throw submissionUpdateError;
+        }
+
+        selectElement.setAttribute("data-prev-value", newStatus);
+
+        const noteEl = selectElement.parentElement.querySelector(".progress-note");
+        if (noteEl) {
+          noteEl.textContent = `Update terakhir: ${formatDateTime(nowIso)}`;
+        }
+      } catch (err) {
+        console.error("UPDATE PROGRESS ERROR:", err);
+        alert("Gagal mengubah progress.");
+        selectElement.value = previousValue;
+      } finally {
+        selectElement.disabled = false;
+      }
     }
 
     applyFilterBtn.addEventListener("click", async function () {
@@ -627,7 +772,9 @@
             kelas_teknikal,
             tempat_penyelenggaraan,
             final_submitted_at,
-            created_at
+            created_at,
+            current_progress_status,
+            current_progress_updated_at
           `)
           .eq("peserta_id", peserta.id)
           .order("final_submitted_at", { ascending: false });
@@ -654,8 +801,8 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td>${peserta.nrp ?? "-"}</td>
-                    <td>${peserta.nama_lengkap ?? "-"}</td>
+                    <td>${escapeHtml(peserta.nrp ?? "-")}</td>
+                    <td>${escapeHtml(peserta.nama_lengkap ?? "-")}</td>
                     <td>Tidak ada submission pada periode ini</td>
                   </tr>
                 </tbody>
@@ -671,15 +818,21 @@
         const rowsHtml = submissions.map(item => {
           const namaTraining = getTrainingName(item);
           const tanggal = item.final_submitted_at || item.created_at;
+          const progressHtml = buildProgressSelect(
+            item.id,
+            item.current_progress_status || "",
+            item.current_progress_updated_at
+          );
 
           return `
             <tr>
-              <td>${peserta.nrp ?? "-"}</td>
-              <td>${peserta.nama_lengkap ?? "-"}</td>
-              <td>${namaTraining}</td>
-              <td>${tanggal ? new Date(tanggal).toLocaleString("id-ID") : "-"}</td>
+              <td>${escapeHtml(peserta.nrp ?? "-")}</td>
+              <td>${escapeHtml(peserta.nama_lengkap ?? "-")}</td>
+              <td>${escapeHtml(namaTraining)}</td>
+              <td>${formatDateTime(tanggal)}</td>
               <td><span class="badge">Submitted</span></td>
               <td><a href="admin-detail.html?id=${item.id}" class="action-link">Lihat Detail</a></td>
+              <td>${progressHtml}</td>
             </tr>
           `;
         }).join("");
@@ -696,6 +849,7 @@
                   <th>Tanggal</th>
                   <th>Status</th>
                   <th>Aksi</th>
+                  <th>Progress</th>
                 </tr>
               </thead>
               <tbody>
@@ -709,6 +863,21 @@
         searchMessage.textContent = "Terjadi kesalahan saat mengambil data.";
         searchMessage.style.color = "red";
       }
+    });
+
+    document.addEventListener("change", async function (event) {
+      if (!event.target.classList.contains("progress-select")) return;
+
+      const selectEl = event.target;
+      const submissionId = selectEl.getAttribute("data-submission-id");
+      const newStatus = selectEl.value;
+
+      await updateSubmissionProgress(submissionId, newStatus, selectEl);
+    });
+
+    document.addEventListener("focusin", function (event) {
+      if (!event.target.classList.contains("progress-select")) return;
+      event.target.setAttribute("data-prev-value", event.target.value || "");
     });
 
     populateMonthOptions();
