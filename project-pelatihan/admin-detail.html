@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Submission - Historical Training</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .header {
+      background: #111827;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .back-btn,
+    .logout-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      background: #2563eb;
+    }
+
+    .back-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+    }
+
+    .logout-btn:hover {
+      background: #dc2626;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      margin: 0 0 16px 0;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .message {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .detail-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .detail-label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      color: #111827;
+      word-break: break-word;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    thead {
+      background: #f9fafb;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      color: #374151;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        align-items: flex-start;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .back-btn,
+      .logout-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Detail Submission</h1>
+    <div class="header-actions">
+      <button id="backBtn" class="back-btn" type="button">Kembali ke Dashboard</button>
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div id="detailMessage" class="message">Memuat data...</div>
+
+      <div id="detailContent" style="display:none;">
+        <h2 class="section-title">Informasi Submission</h2>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">ID Submission</div>
+            <div class="detail-value" id="detailSubmissionId">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">NRP</div>
+            <div class="detail-value" id="detailNrp">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Nama Peserta</div>
+            <div class="detail-value" id="detailNama">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Training</div>
+            <div class="detail-value" id="detailTraining">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Kategori Pelatihan</div>
+            <div class="detail-value" id="detailKategori">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Group EGI</div>
+            <div class="detail-value" id="detailGroupEgi">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Kelas Teknikal</div>
+            <div class="detail-value" id="detailKelasTeknikal">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Tempat Penyelenggaraan</div>
+            <div class="detail-value" id="detailTempat">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Tanggal Final Submit</div>
+            <div class="detail-value" id="detailSubmittedAt">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Dibuat Pada</div>
+            <div class="detail-value" id="detailCreatedAt">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Current Progress</div>
+            <div class="detail-value" id="detailCurrentProgress">-</div>
+          </div>
+
+          <div class="detail-item">
+            <div class="detail-label">Terakhir Update Progress</div>
+            <div class="detail-value" id="detailProgressUpdatedAt">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="historyCard" class="card" style="display:none;">
+      <h2 class="section-title">Riwayat Progress</h2>
+      <div id="historyMessage" class="message">Memuat riwayat progress...</div>
+
+      <div id="historyContent" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Progress</th>
+              <th>Mulai</th>
+              <th>Selesai</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr>
+              <td colspan="3">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config/supabase.js"></script>
+
+  <script>
+    const isLoggedIn = localStorage.getItem("adminLoggedIn");
+
+    if (isLoggedIn !== "true") {
+      window.location.href = "admin-login.html";
+    }
+
+    const backBtn = document.getElementById("backBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const detailMessage = document.getElementById("detailMessage");
+    const detailContent = document.getElementById("detailContent");
+
+    const detailSubmissionId = document.getElementById("detailSubmissionId");
+    const detailNrp = document.getElementById("detailNrp");
+    const detailNama = document.getElementById("detailNama");
+    const detailTraining = document.getElementById("detailTraining");
+    const detailKategori = document.getElementById("detailKategori");
+    const detailGroupEgi = document.getElementById("detailGroupEgi");
+    const detailKelasTeknikal = document.getElementById("detailKelasTeknikal");
+    const detailTempat = document.getElementById("detailTempat");
+    const detailSubmittedAt = document.getElementById("detailSubmittedAt");
+    const detailCreatedAt = document.getElementById("detailCreatedAt");
+    const detailCurrentProgress = document.getElementById("detailCurrentProgress");
+    const detailProgressUpdatedAt = document.getElementById("detailProgressUpdatedAt");
+
+    const historyCard = document.getElementById("historyCard");
+    const historyMessage = document.getElementById("historyMessage");
+    const historyContent = document.getElementById("historyContent");
+    const historyBody = document.getElementById("historyBody");
+
+    backBtn.addEventListener("click", function () {
+      window.location.href = "admin-dashboard.html";
+    });
+
+    logoutBtn.addEventListener("click", function () {
+      localStorage.removeItem("adminLoggedIn");
+      window.location.href = "admin-login.html";
+    });
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      return new Date(value).toLocaleString("id-ID");
+    }
+
+    function formatProgressLabel(value) {
+      const map = {
+        "in class": "In Class",
+        "gerdas": "Gerdas",
+        "in field": "In Field",
+        "ojt": "OJT",
+        "praktek": "Praktek",
+        "selesai": "Selesai"
+      };
+
+      return map[value] || value || "-";
+    }
+
+    function getTrainingName(item) {
+      return (
+        item.jenis_pelatihan_unit ||
+        item.jenis_pelatihan_teknikal ||
+        item.kategori_pelatihan ||
+        "-"
+      );
+    }
+
+    async function loadSubmissionDetail() {
+      const params = new URLSearchParams(window.location.search);
+      const submissionId = params.get("id");
+
+      if (!submissionId) {
+        detailMessage.textContent = "ID submission tidak ditemukan di URL.";
+        detailMessage.style.color = "red";
+        return;
+      }
+
+      try {
+        const { data: submissionData, error: submissionError } = await window.sb
+          .from("training_submissions")
+          .select(`
+            id,
+            peserta_id,
+            kategori_pelatihan,
+            jenis_pelatihan_unit,
+            jenis_pelatihan_teknikal,
+            group_egi,
+            kelas_teknikal,
+            tempat_penyelenggaraan,
+            final_submitted_at,
+            created_at,
+            current_progress_status,
+            current_progress_updated_at
+          `)
+          .eq("id", submissionId)
+          .limit(1);
+
+        if (submissionError) {
+          throw submissionError;
+        }
+
+        if (!submissionData || submissionData.length === 0) {
+          detailMessage.textContent = "Data submission tidak ditemukan.";
+          detailMessage.style.color = "red";
+          return;
+        }
+
+        const submission = submissionData[0];
+
+        let peserta = null;
+
+        if (submission.peserta_id) {
+          const { data: pesertaData, error: pesertaError } = await window.sb
+            .from("peserta")
+            .select("id, nrp, nama_lengkap")
+            .eq("id", submission.peserta_id)
+            .limit(1);
+
+          if (pesertaError) {
+            throw pesertaError;
+          }
+
+          peserta = pesertaData && pesertaData.length > 0 ? pesertaData[0] : null;
+        }
+
+        detailSubmissionId.textContent = submission.id ?? "-";
+        detailNrp.textContent = peserta?.nrp ?? "-";
+        detailNama.textContent = peserta?.nama_lengkap ?? "-";
+        detailTraining.textContent = getTrainingName(submission);
+        detailKategori.textContent = submission.kategori_pelatihan ?? "-";
+        detailGroupEgi.textContent = submission.group_egi ?? "-";
+        detailKelasTeknikal.textContent = submission.kelas_teknikal ?? "-";
+        detailTempat.textContent = submission.tempat_penyelenggaraan ?? "-";
+        detailSubmittedAt.textContent = formatDateTime(submission.final_submitted_at);
+        detailCreatedAt.textContent = formatDateTime(submission.created_at);
+        detailCurrentProgress.innerHTML = `<span class="badge">${formatProgressLabel(submission.current_progress_status)}</span>`;
+        detailProgressUpdatedAt.textContent = formatDateTime(submission.current_progress_updated_at);
+
+        detailMessage.style.display = "none";
+        detailContent.style.display = "block";
+
+        historyCard.style.display = "block";
+        await loadProgressHistory(submission.id);
+      } catch (err) {
+        console.error("LOAD DETAIL ERROR:", err);
+        detailMessage.textContent = "Terjadi kesalahan saat mengambil detail submission.";
+        detailMessage.style.color = "red";
+      }
+    }
+
+    async function loadProgressHistory(submissionId) {
+      historyMessage.style.display = "block";
+      historyContent.style.display = "none";
+      historyBody.innerHTML = `
+        <tr>
+          <td colspan="3">Memuat data...</td>
+        </tr>
+      `;
+
+      try {
+        const { data, error } = await window.sb
+          .from("training_progress_history")
+          .select("id, status, started_at, ended_at")
+          .eq("training_submission_id", submissionId)
+          .order("started_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          historyMessage.textContent = "Belum ada riwayat progress.";
+          historyMessage.style.color = "#6b7280";
+          return;
+        }
+
+        const rowsHtml = data.map(item => {
+          return `
+            <tr>
+              <td>${formatProgressLabel(item.status)}</td>
+              <td>${formatDateTime(item.started_at)}</td>
+              <td>${formatDateTime(item.ended_at)}</td>
+            </tr>
+          `;
+        }).join("");
+
+        historyBody.innerHTML = rowsHtml;
+        historyMessage.style.display = "none";
+        historyContent.style.display = "block";
+      } catch (err) {
+        console.error("LOAD HISTORY ERROR:", err);
+        historyMessage.textContent = "Terjadi kesalahan saat mengambil riwayat progress.";
+        historyMessage.style.color = "red";
+      }
+    }
+
+    loadSubmissionDetail();
+  </script>
+</body>
+</html>
