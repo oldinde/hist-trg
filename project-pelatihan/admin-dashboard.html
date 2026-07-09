@@ -265,6 +265,11 @@
   const logoutBtn = document.getElementById("logoutBtn");
   const searchBtn = document.getElementById("searchBtn");
   const nrpSearchInput = document.getElementById("nrpSearchInput");
+    nrpSearchInput.addEventListener("input", function () {
+  let value = nrpSearchInput.value.toUpperCase();
+  value = value.replace(/\s+/g, "");
+  nrpSearchInput.value = value;
+});
   const searchMessage = document.getElementById("searchMessage");
   const searchResult = document.getElementById("searchResult");
 
@@ -274,7 +279,7 @@
   });
 
   searchBtn.addEventListener("click", async function () {
-    const nrp = nrpSearchInput.value.trim();
+    const nrp = nrpSearchInput.value.toUpperCase().replace(/\s+/g, "");
 
     searchResult.innerHTML = "";
 
